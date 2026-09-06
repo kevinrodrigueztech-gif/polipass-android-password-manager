@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_paste"
+        android:title="Pegar" />
+    <item
+        android:id="@+id/menu_paste_plain_text"
+        android:title="Pegar sin formato" />
+    <item
+        android:id="@+id/menu_cut"
+        android:title="Cortar" />
+</menu>

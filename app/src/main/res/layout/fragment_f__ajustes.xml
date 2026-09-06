@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".Fragmentos.F_Ajustes"
+    android:id="@+id/f_ajustes">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:fontFamily="@font/dosis_bold"
+            android:padding="10dp"
+            android:text="@string/Txt_Ajustes"
+            android:textSize="25sp" />
+
+        <TextView
+            android:id="@+id/Eliminar_Todos_Registros"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_regular"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:text="@string/Eliminar_Todos_Registros"
+            android:textSize="20sp"
+            app:drawableStartCompat="@drawable/icono_elim" />
+
+        <TextView
+            android:id="@+id/Exportar_Archivo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_regular"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:text="@string/Exportar_Archivo"
+            android:textSize="20sp"
+            app:drawableStartCompat="@drawable/icono_impo" />
+
+        <TextView
+            android:id="@+id/Importar_Archivo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_regular"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:text="@string/Importar_Archivo"
+            android:textSize="20sp"
+            app:drawableStartCompat="@drawable/icono_impo" />
+
+        <TextView
+            android:id="@+id/Cambiar_password_maestra"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_regular"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:text="@string/Cambiar_password_maestra"
+            android:textSize="20sp"
+            app:drawableStartCompat="@drawable/icono_secur" />
+
+        <TextView
+            android:id="@+id/Compartir"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_regular"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:text="@string/Compartir"
+            android:textSize="20sp"
+            app:drawableStartCompat="@drawable/icono_compartir" />
+
+        <TextView
+            android:id="@+id/Autodestruccion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_regular"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:text="@string/Autodestruccion"
+            android:textSize="20sp"
+            app:drawableStartCompat="@drawable/icono_auto_destruccion" />
+
+        <TextView
+            android:id="@+id/PreguntaSafe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_regular"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:text="@string/Configurar_Preguntas_Recuperacion"
+            android:textSize="20sp"
+            app:drawableStartCompat="@drawable/icono_preguntas" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/themeSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="10dp"
+            android:drawablePadding="10dp"
+            android:fontFamily="@font/dosis_regular"
+            android:text="@string/Tema_Oscuro"
+            android:textSize="20sp"
+            app:drawableStartCompat="@drawable/icono_tema"
+            android:layout_centerInParent="true"/>
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:padding="@dimen/fingerprint_icon_size"
+            android:layout_gravity="center"
+            app:lottie_autoPlay="true"
+            app:lottie_fileName="settings.json"
+            app:lottie_imageAssetsFolder="assets"
+            app:lottie_loop="true" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+</RelativeLayout>

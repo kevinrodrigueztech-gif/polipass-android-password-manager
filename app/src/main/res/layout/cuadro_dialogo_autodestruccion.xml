@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".Fragmentos.F_Ajustes"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp"
+   >
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottieAnimationViewDes"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:gravity="center_horizontal"
+        app:lottie_autoPlay="true"
+        app:lottie_fileName="eliminar.json"
+        app:lottie_imageAssetsFolder="assets"
+        app:lottie_loop="true"
+        tools:ignore="MissingConstraints,ImageContrastCheck"
+        tools:layout_editor_absoluteX="10dp"
+        tools:layout_editor_absoluteY="10dp" />
+
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:ignore="UnknownId" />
+
+    <TextView
+        android:id="@+id/Autodestruccion_Ajustes"
+        android:text="@string/Txt_Autodestruccion_Ajustes"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/dosis_regular"
+        android:textSize="22sp"
+        app:layout_constraintTop_toBottomOf="@+id/lottieAnimationViewDes"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+    <EditText
+        android:id="@+id/Et_Numero_Intentos"
+        android:autofillHints=""
+        android:hint="@string/Et_Número_de_Intentos"
+        android:padding="15dp"
+        android:textSize="25sp"
+        android:maxLines="1"
+        android:inputType="textCapWords|text"
+        android:fontFamily="@font/dosis_regular"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/Autodestruccion_Ajustes"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"
+        tools:ignore="VisualLintTextFieldSize" />
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/habilitar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@+id/Et_Numero_Intentos"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp">
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/HabAutoDes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_bold"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:minHeight="48dp"
+            android:text="@string/Habilitar_Autodestruccion"
+            android:textSize="20sp"
+            tools:ignore="MissingConstraints,UseSwitchCompatOrMaterialXml"
+            tools:layout_editor_absoluteX="10dp"
+            tools:layout_editor_absoluteY="10dp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/HabExportCSV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_bold"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:minHeight="48dp"
+            android:text="@string/Habilitar_Exportar_CSV"
+            android:textSize="20sp"
+            tools:ignore="MissingConstraints,UseSwitchCompatOrMaterialXml"
+            tools:layout_editor_absoluteX="10dp"
+            tools:layout_editor_absoluteY="10dp" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".Fragmentos.F_AcercaDe">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_gravity="center"
+            app:lottie_autoPlay="true"
+            app:lottie_fileName="info.json"
+            app:lottie_imageAssetsFolder="assets"
+            app:lottie_loop="true" />
+
+        <!--Desarrollador-->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:fontFamily="@font/dosis_bold"
+            android:gravity="center"
+            android:text="@string/DesarrolladorTXT"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <!--Correo contacto-->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/dosis_bold"
+            android:gravity="center"
+            android:text="@string/CorreoContactoTXT"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <!--Versión-->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/dosis_bold"
+            android:gravity="center"
+            android:text="@string/VersionTXT"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:layout_gravity="center"
+            android:layout_width="80dp"
+            android:layout_height="140dp"
+            android:src="@drawable/burrito" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+</FrameLayout>

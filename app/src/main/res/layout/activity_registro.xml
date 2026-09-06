@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:padding="10dp"
+    android:orientation="vertical"
+    tools:context=".Registro_usuario.Registro">
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        app:lottie_imageAssetsFolder="assets"
+        app:lottie_fileName="inicio.json"
+        android:layout_margin="10dp"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"/>
+
+    <TextView
+        android:text="¡Bienvenid@!"
+        android:textSize="20sp"
+        android:fontFamily="@font/dosis_bold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:text="@string/TXTMensaje"
+        android:textSize="20sp"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/dosis_regular"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!--Contraseña usuario-->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:passwordToggleEnabled="true"
+        android:layout_marginTop="10dp">
+
+        <EditText
+            android:id="@+id/EtPasswordU"
+            android:hint="@string/EtPasswordU"
+            android:fontFamily="@font/dosis_bold"
+            android:layout_width="match_parent"
+            android:textSize="20sp"
+            android:layout_height="wrap_content"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!--Confirmar contraseña usuario-->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:passwordToggleEnabled="true"
+        android:layout_marginTop="10dp">
+
+        <EditText
+            android:id="@+id/EtCPassword"
+            android:hint="@string/EtCPassword"
+            android:fontFamily="@font/dosis_bold"
+            android:layout_width="match_parent"
+            android:textSize="20sp"
+            android:layout_height="wrap_content"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!--Registrar password maestra-->
+    <Button
+        android:id="@+id/BtnRegistrar"
+        android:text="@string/BtnRegistrar"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/dosis_bold"
+        android:textColor="#fff"
+        android:textSize="20sp"
+        android:backgroundTint="@color/colorPrimary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</androidx.appcompat.widget.LinearLayoutCompat>

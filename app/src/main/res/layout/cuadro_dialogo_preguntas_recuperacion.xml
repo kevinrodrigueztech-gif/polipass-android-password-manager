@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".Fragmentos.F_Ajustes"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp">
+
+    <FrameLayout
+        android:id="@+id/fragment_container_preguntas"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <TextView
+        android:id="@+id/Preguntas_restore_settings"
+        android:text="@string/Txt_Cuantas_Preguntas"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/dosis_regular"
+        android:textSize="20sp"
+        app:layout_constraintTop_toBottomOf="@+id/habilitar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"
+        tools:ignore="MissingConstraints" />
+
+    <TextView
+        android:id="@+id/Preguntas_restore_letrero"
+        android:text="@string/Et_letrero"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/dosis_regular"
+        android:textSize="20sp"
+        app:layout_constraintTop_toBottomOf="@+id/Preguntas_op"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"
+        tools:ignore="MissingConstraints"
+        app:drawableStartCompat="@drawable/icono_edit"/>
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/Preguntas_op"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@+id/Preguntas_restore_settings"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp">
+
+        <RadioGroup
+            android:id="@+id/radioGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/pregunta_uno"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:padding="8dp"
+            android:text="@string/Rbtn_Una_Pregunta"
+            tools:ignore="VisualLintButtonSize,TouchTargetSizeCheck,VisualLintBounds" />
+
+        <RadioButton
+            android:id="@+id/pregunta_dos"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:padding="8dp"
+            android:text="@string/Rbtn_Dos_Pregunta"
+            tools:ignore="VisualLintButtonSize,TouchTargetSizeCheck,VisualLintBounds" />
+
+        <RadioButton
+            android:id="@+id/pregunta_tres"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:padding="8dp"
+            android:text="@string/Rbtn_Tres_Pregunta"
+            tools:ignore="VisualLintButtonSize,TouchTargetSizeCheck,VisualLintBounds" />
+
+        </RadioGroup>
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/habilitar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"
+        tools:ignore="MissingConstraints">
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/HabPregSecure"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:drawablePadding="10dp"
+            android:focusable="true"
+            android:fontFamily="@font/dosis_regular"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:minHeight="48dp"
+            android:text="@string/Habilitar_Preguntas_De_Recuperacion"
+            android:textSize="20sp"
+            tools:ignore="MissingConstraints,UseSwitchCompatOrMaterialXml"
+            tools:layout_editor_absoluteX="10dp"
+            tools:layout_editor_absoluteY="10dp" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/Preguntas_Group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@+id/Preguntas_restore_letrero"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp">
+
+        <EditText
+            android:id="@+id/EtPregunaUno"
+            android:autofillHints=""
+            android:hint="@string/Et_Pregunta_Uno"
+            android:padding="15dp"
+            android:textSize="18sp"
+            android:maxLines="1"
+            android:inputType="textCapWords|text"
+            android:fontFamily="@font/dosis_regular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            tools:ignore="VisualLintTextFieldSize" />
+        <EditText
+            android:id="@+id/EtRespuestaUno"
+            android:autofillHints=""
+            android:hint="@string/Et_Respuesta_Uno"
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:inputType="textCapWords|text"
+            android:fontFamily="@font/dosis_regular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            tools:ignore="VisualLintTextFieldSize" />
+        <EditText
+            android:id="@+id/EtPreguntaDos"
+            android:hint="@string/Et_Pregunta_Dos"
+            android:textSize="18sp"
+            android:maxLines="1"
+            android:autofillHints=""
+            android:inputType="textCapWords|text"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/dosis_regular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            tools:ignore="VisualLintTextFieldSize" />
+        <EditText
+            android:id="@+id/EtRespuestaDos"
+            android:autofillHints=""
+            android:hint="@string/Et_Respuesta_Dos"
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:inputType="textCapWords|text"
+            android:fontFamily="@font/dosis_regular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            tools:ignore="VisualLintTextFieldSize" />
+        <EditText
+            android:id="@+id/EtPreguntaTres"
+            android:autofillHints=""
+            android:hint="@string/Et_Pregunta_Tres"
+            android:textSize="18sp"
+            android:maxLines="1"
+            android:layout_marginTop="16dp"
+            android:inputType="textCapWords|text"
+            android:fontFamily="@font/dosis_regular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            tools:ignore="VisualLintTextFieldSize" />
+        <EditText
+            android:id="@+id/EtRespuestaTres"
+            android:hint="@string/Et_Respuesta_Tres"
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:autofillHints=""
+            android:inputType="textCapWords|text"
+            android:fontFamily="@font/dosis_regular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            tools:ignore="VisualLintTextFieldSize" />
+
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

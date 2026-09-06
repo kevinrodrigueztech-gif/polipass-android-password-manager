@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:padding="10dp"
+    android:orientation="vertical"
+    tools:context=".Login_usuario.Logeo_usuario">
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        app:lottie_imageAssetsFolder="assets"
+        app:lottie_fileName="acceso.json"
+        android:layout_marginTop="10dp"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"/>
+
+    <TextView
+        android:text="¡Bienvenid@!"
+        android:textSize="20sp"
+        android:fontFamily="@font/dosis_regular"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!--Contraseña usuario-->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:passwordToggleEnabled="true"
+        android:layout_marginTop="10dp">
+
+        <EditText
+            android:id="@+id/EtPasswordU"
+            android:hint="@string/EtPasswordU"
+            android:textSize="20sp"
+            android:inputType="textPassword"
+            android:fontFamily="@font/dosis_regular"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!--Botón ingresar-->
+    <Button
+        android:id="@+id/BtnIngresar"
+        android:text="@string/BtnIngresar"
+        android:textSize="20sp"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/dosis_bold"
+        android:textColor="#fff"
+        android:backgroundTint="@color/colorPrimary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/Btn_Recuperar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:visibility="invisible"
+        android:clickable="true"
+        android:drawablePadding="10dp"
+        android:padding="8dp"
+        android:focusable="true"
+        android:fontFamily="@font/dosis_regular"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:text="@string/Btn_Recuperar_Cuenta"
+        android:textSize="20sp"
+        app:drawableStartCompat="@drawable/icono_preguntas" />
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <!--Botón inicio sesión biométrico-->
+        <Button
+            android:id="@+id/BtnInicioSesionBiometrico"
+            android:text="@string/BtnInicioSesionBiometrico"
+            android:fontFamily="@font/dosis_bold"
+            android:textColor="#fff"
+            android:textSize="20sp"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <ImageButton
+            android:id="@+id/Ib_Aviso"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="10dp"
+            android:background="@android:color/transparent"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:src="@drawable/ic_aviso"
+            tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        app:lottie_imageAssetsFolder="assets"
+        app:lottie_fileName="huella_dactilar.json"
+        android:layout_marginTop="10dp"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"/>
+
+</androidx.appcompat.widget.LinearLayoutCompat>
