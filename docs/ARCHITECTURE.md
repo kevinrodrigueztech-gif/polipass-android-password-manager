@@ -1,6 +1,6 @@
 # Architecture Notes
 
-PoliPass V1 uses a deliberately lightweight Android architecture built around Activities, Fragments, a SQLite helper, and a small encryption utility.
+PoliPass uses a deliberately lightweight Android architecture built around Activities, Fragments, a SQLite helper, and a small encryption utility.
 
 ## Main data flow
 
@@ -9,20 +9,20 @@ User input
    │
    ├── Credential form ──> BDHelper ──> SQLite
    │                         │
-   │                         └── password field ──> Encrypt ──> Android Keystore
+   │                         └── full record ──> Encrypt ──> Android Keystore
    │
-   ├── Login ─────────────> SharedPreferences (V1 limitation)
+   ├── Login ─────────────> SharedPreferences (verifier storage)
    │                         │
    │                         └── optional BiometricPrompt
    │
-   └── Settings ──────────> import/export, recovery, failed attempts
+   └── Settings ──────────> backup/restore, recovery, failed attempts
 ```
 
 ## Cryptography boundary
 
 `Encrypt.java` generates an AES key in Android Keystore and uses `AES/GCM/NoPadding`. Encryption obtains a fresh IV from the `Cipher`, stores the IV together with the ciphertext, and authenticates the encrypted payload using GCM.
 
-This protects the password field at rest from simple SQLite inspection, but it does **not** protect the entire record and it does not solve the master-password storage problem.
+This protects the complete record from simple SQLite inspection while keeping the vault key outside SQLite. The master password is handled separately as a verifier.
 
 ## Database boundary
 
@@ -61,7 +61,7 @@ Recovery answers are authentication factors, not encryption keys. Their values a
 
 A successful recovery does not reconstruct the master password. Instead, it proves control of the configured recovery factors and lets the user create a new master-password verifier. The vault encryption key remains the Android Keystore key already used by the existing database encryption layer.
 
-This separation means changing or recovering the master password does not require decrypting and re-encrypting every vault record.
+This separation means changing or recovering the master password does not require decrypting and re-encrypting the vault records.
 
 
 ## Rendimiento de autenticación
@@ -79,3 +79,9 @@ El cifrado de registros utiliza AAD (`PoliPass/vault-record/v1`) para evitar reu
 La V4 incorpora una migración desde la versión anterior. Los registros existentes se leen desde las columnas antiguas, se convierten a un único payload cifrado y después se eliminan sus valores en claro. La operación no elimina la tabla ni los registros.
 
 Como los campos sensibles ya no están disponibles para consultas SQL, la búsqueda por título y la coincidencia por sitio web se realizan sobre los registros descifrados en memoria. Para una bóveda local pequeña esta estrategia mantiene la privacidad de los datos almacenados a costa de recorrer los registros durante estas operaciones.
+
+## Backup seguro
+
+La exportación utiliza el selector de documentos de Android y crea archivos `.ppbk`. El contenido completo de la bóveda se serializa a JSON y se cifra con AES-GCM. La contraseña del backup se convierte en una clave AES mediante PBKDF2-HMAC-SHA256 con un salt aleatorio por archivo.
+
+La restauración primero descifra y valida el backup; solo después ejecuta una transacción que reemplaza los registros existentes. Un backup corrupto o una contraseña incorrecta no modifica la bóveda actual.

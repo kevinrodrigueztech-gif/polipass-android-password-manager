@@ -4,24 +4,24 @@
 
 PoliPass is an academic and portfolio project focused on Android application development, local data persistence, cryptography, biometric authentication, and the Android Autofill Framework.
 
-> **Security notice:** this is an academic/portfolio password-manager project and is **not intended for real-world production credentials**. The current release documents remaining security debt around full-record encryption, backup/export, and Autofill.
+> **Security notice:** this is an academic/portfolio password-manager project and is **not intended for real-world production credentials**. The current release documents remaining security debt around recovery design, database migrations, backup lifecycle, and Autofill.
 
 ## What this project demonstrates
 
 - Android application development with Java and AndroidX
 - Local persistence with SQLite
-- AES-GCM encryption for stored password fields
+- AES-GCM encryption for complete vault records
 - Android Keystore-backed symmetric key management
 - Biometric authentication with `BiometricPrompt`
 - Password generation with `SecureRandom`
-- CSV import/export flow
+- Password-protected encrypted backup/restore
 - Configurable failed-login protection and vault clearing
 - Material UI with dark-theme support
 - Initial Android Autofill Service integration
 
 ## Architecture
 
-The current V1 codebase is intentionally simple and easy to inspect:
+The current codebase is intentionally simple and easy to inspect:
 
 ```text
 app/
@@ -39,11 +39,13 @@ app/
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the main data flows and security boundaries.
 
-## Security model — V1
+## Security model
 
-The V1 implementation encrypts the **stored password field** using AES-GCM with a 256-bit key generated and retained by Android Keystore. Each encryption operation generates a fresh GCM IV and stores the IV alongside the ciphertext.
+The vault record is encrypted as a single authenticated payload using AES-256-GCM with a 256-bit key generated and retained by Android Keystore. Each record gets a fresh GCM IV and authenticated additional data (AAD).
 
-The rest of the vault record is not encrypted by the current implementation. The master password is stored only as a PBKDF2 verifier. Recovery answers are also stored as independent salted PBKDF2 verifiers. These limitations are intentionally documented rather than presented as production-grade security.
+The master password is stored only as a PBKDF2-HMAC-SHA256 verifier. Recovery answers are stored as independent salted verifiers and are used only to authorize a master-password reset.
+
+Backups use a separate user-chosen backup password and an encrypted `.ppbk` format, so the portable backup does not depend on the source device's Android Keystore key.
 
 For a deeper review, see [`SECURITY.md`](SECURITY.md).
 
@@ -59,7 +61,6 @@ For a deeper review, see [`SECURITY.md`](SECURITY.md).
 | Password generation | `SecureRandom` |
 | Autofill | Android Autofill Framework |
 | Animation | Lottie |
-| CSV | OpenCSV |
 | Build | Gradle + Android Gradle Plugin |
 
 The project currently uses **Android Gradle Plugin 9.3.2** with **Gradle 9.5.0**. Android's current compatibility documentation lists Gradle 9.5.0 as the minimum required version for the 9.3 line, and AGP 9.3 requires JDK 17. citeturn688531search0turn688531search4
@@ -93,36 +94,31 @@ On Windows:
 
 The repository includes starter unit/instrumentation tests and a GitHub Actions workflow that runs Gradle tests, Android Lint, and a debug build on every push and pull request.
 
-The current test suite is intentionally small. Expanding coverage is part of the V2 roadmap, especially for encryption, authentication state, database migrations, import/export validation, and Autofill parsing.
+The current test suite is intentionally small. Expanding coverage is part of the roadmap, especially for encryption, authentication state, database migrations, backup validation, and Autofill parsing.
 
-## Known V1 limitations
+## Known limitations
 
-The following items are tracked as technical debt rather than hidden:
+1. **Recovery factors:** knowledge-based recovery can still be weak if users choose predictable answers.
+2. **Database migrations:** the schema now supports full-record encryption, but future schema changes should remain explicitly versioned and migration-safe.
+3. **Backup lifecycle:** encrypted backups are portable, but the user must remember the backup password; PoliPass cannot recover it.
+4. **Autofill:** the Autofill Service is a partial implementation and should not be considered production-ready.
+5. **Clipboard/sensitive UI:** clipboard handling and sensitive-screen protections need further hardening.
+6. **Performance at scale:** full-record search decrypts records in memory, which is appropriate for a small local vault but should be revisited for very large datasets.
 
-1. **Vault key hierarchy:** the current vault key remains device-bound in Android Keystore; a future release can add explicit key-wrapping/rotation semantics and stronger cross-device recovery.
-2. **Recovery answers:** answers now use salted PBKDF2 verifiers, but knowledge-based recovery remains weaker than a modern recovery factor because answers may be guessable.
-3. **Database upgrades:** `onUpgrade()` currently recreates the table instead of performing versioned migrations.
-4. **Vault coverage:** only the password column is encrypted; other record fields remain plaintext in SQLite.
-5. **Backup/export:** CSV export is not an encrypted portable vault format and must not be treated as a secure backup mechanism.
-6. **Autofill:** the Autofill Service is a partial implementation and should not be considered production-ready.
-7. **Clipboard/sensitive UI:** clipboard handling and sensitive-screen protections need further hardening.
+## Roadmap
 
-## V2 roadmap
-
-- Replace plaintext master-password storage with a password-derived key hierarchy
-- Hash or otherwise redesign recovery mechanisms
-- Encrypt the complete vault record or move to an encrypted database design
+- Strengthen recovery with a less guessable recovery factor
 - Add explicit, versioned database migrations
-- Introduce encrypted, authenticated backup/restore
+- Add backup format version migration and stronger recovery UX
 - Complete Autofill parsing and dataset generation
 - Improve clipboard expiration and sensitive-screen protection
-- Expand unit and instrumentation test coverage
+- Expand unit and instrumentation coverage
 - Add static analysis and dependency-security checks to CI
 - Refactor toward clearer separation of UI, domain, and data layers
 
 ## Portfolio context
 
-This repository is intentionally structured as a **transparent V1 case study**: it shows working Android concepts while clearly documenting the engineering and security work that remains before a production release.
+This repository is intentionally structured as a **transparent security-engineering case study**: it shows working Android concepts while clearly documenting the engineering and security work that remains before a production release.
 
 For a hiring review, the most relevant areas to inspect first are:
 
@@ -157,10 +153,10 @@ Las instalaciones heredadas con respuestas V1 se migran de forma gradual despué
 La derivación PBKDF2 usa 600,000 iteraciones de HMAC-SHA256 de forma deliberadamente costosa para dificultar ataques de fuerza bruta. Para evitar que esta protección congele la interfaz, las operaciones de autenticación y generación de verificadores se ejecutan en un hilo de trabajo y la interfaz muestra un estado temporal como “Verificando...” o “Guardando...”. No se reduce el número de iteraciones para obtener velocidad a costa de seguridad.
 
 
-## Seguridad — evolución V4
+## Respaldo y restauración cifrados
 
-La bóveda ahora cifra el registro completo con AES-GCM y mantiene la clave fuera de SQLite mediante Android Keystore. La contraseña maestra se almacena únicamente como verificador PBKDF2 con salt independiente, y la recuperación usa verificadores separados.
+PoliPass ya no utiliza CSV para exportar credenciales. El respaldo se genera como un archivo `.ppbk` protegido con una contraseña de respaldo que el usuario elige y que PoliPass no almacena.
 
-### Próximo reto de seguridad
+El contenido de la bóveda se serializa y se cifra con AES-256-GCM usando una clave derivada mediante PBKDF2-HMAC-SHA256. El archivo incluye salt, IV, versión de formato y ciphertext autenticado. Durante la restauración se valida y descifra el archivo completo antes de reemplazar la bóveda; la sustitución de registros se realiza dentro de una transacción de SQLite.
 
-Diseñar un flujo de respaldo/restauración de la bóveda que no requiera extraer la clave de Android Keystore en texto plano y revisar la política de exportación/importación para evitar archivos CSV con información sensible fuera del almacenamiento protegido.
+La contraseña de respaldo es independiente de la contraseña maestra. El respaldo no depende de la clave del Android Keystore del dispositivo de origen, por lo que puede restaurarse en otro dispositivo que tenga PoliPass instalado.

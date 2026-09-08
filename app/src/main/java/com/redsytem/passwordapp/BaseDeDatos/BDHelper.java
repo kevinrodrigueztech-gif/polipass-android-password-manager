@@ -262,6 +262,32 @@ public class BDHelper extends SQLiteOpenHelper {
         });
     }
 
+    public void reemplazarTodosLosRegistros(ArrayList<Password> records) throws Exception {
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.delete(Constants.TABLE_NAME, null, null);
+            for (Password record : records) {
+                ContentValues values = new ContentValues();
+                values.put(Constants.C_REGISTRO_CIFRADO,
+                        construirRegistroCifrado(
+                                record.getTitulo(),
+                                record.getCuenta(),
+                                record.getNombre_usuario(),
+                                record.getPassword(),
+                                record.getSitio_web(),
+                                record.getNota()));
+                values.put(Constants.C_TIEMPO_REGISTRO, record.getT_registro());
+                values.put(Constants.C_TIEMPO_ACTUALIZACION, record.getT_actualiacion());
+                db.insertOrThrow(Constants.TABLE_NAME, null, values);
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
+    }
+
     public int ObtenerNumeroRegistros() {
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + Constants.TABLE_NAME, null);

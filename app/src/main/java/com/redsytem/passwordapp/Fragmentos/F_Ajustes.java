@@ -1,13 +1,11 @@
 package com.redsytem.passwordapp.Fragmentos;
 
 
-import android.Manifest;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,11 +15,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.util.Log;
@@ -30,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -37,26 +33,20 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.opencsv.CSVReader;
 import com.redsytem.passwordapp.BaseDeDatos.BDHelper;
 import com.redsytem.passwordapp.BaseDeDatos.Constants;
-import com.redsytem.passwordapp.Encriptacion.Encrypt;
 import com.redsytem.passwordapp.Login_usuario.Logeo_usuario;
 import com.redsytem.passwordapp.MainActivity;
 import com.redsytem.passwordapp.Modelo.Password;
 import com.redsytem.passwordapp.R;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Objects;
 
 
-import com.redsytem.passwordapp.R;
 import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
 import com.redsytem.passwordapp.Seguridad.RecoveryAnswerStore;
 import com.redsytem.passwordapp.Seguridad.SecurityTaskRunner;
+import com.redsytem.passwordapp.Seguridad.VaultBackupManager;
 
 public class F_Ajustes extends Fragment {
 
@@ -73,6 +63,9 @@ public class F_Ajustes extends Fragment {
     String ordenarTituloAsc = Constants.C_TITULO + " ASC";
 
     private static final String SHARED_PREF = MasterPasswordStore.SHARED_PREF;
+
+    private ActivityResultLauncher<Intent> crearBackupLauncher;
+    private ActivityResultLauncher<Intent> abrirBackupLauncher;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -113,6 +106,38 @@ public class F_Ajustes extends Fragment {
 
         sharedPreferences = getActivity().getSharedPreferences(SHARED_PREF, Context.MODE_PRIVATE);
 
+        crearBackupLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(), result -> {
+                    if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                        Uri uri = result.getData().getData();
+                        if (uri != null) {
+                            try {
+                                requireContext().getContentResolver().takePersistableUriPermission(
+                                        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                            } catch (Exception ignored) {
+                                // Some providers do not support persisted permissions.
+                            }
+                            mostrarDialogoExportarBackup(uri);
+                        }
+                    }
+                });
+
+        abrirBackupLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(), result -> {
+                    if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                        Uri uri = result.getData().getData();
+                        if (uri != null) {
+                            try {
+                                requireContext().getContentResolver().takePersistableUriPermission(
+                                        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            } catch (Exception ignored) {
+                                // Some providers do not support persisted permissions.
+                            }
+                            mostrarDialogoImportarBackup(uri);
+                        }
+                    }
+                });
+
         SwitchCompat themeSwitch = view.findViewById(R.id.themeSwitch);
         themeSwitch.setChecked(isDarkMode);
         themeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -151,54 +176,9 @@ public class F_Ajustes extends Fragment {
             }
         });
 
-        Exportar_Archivo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Toast.makeText(getActivity(), "Exportar archivo", Toast.LENGTH_SHORT).show();
-                if (ContextCompat.checkSelfPermission(getActivity(),
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
-                    try {
-                        ExportarRegistros();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }else {
-                    SolicitudPermisoExportar.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-                }
+        Exportar_Archivo.setOnClickListener(v -> lanzarCrearBackup());
 
-            }
-        });
-
-        Importar_Archivo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                builder.setTitle("¿Importar CSV?");
-                builder.setMessage("Se eliminarán todos los registros actuales.");
-                builder.setPositiveButton("Continuar", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (ContextCompat.checkSelfPermission(getActivity(),
-                                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
-                            bdHelper.EliminarTodosRegistros();
-                            ImportarRegistros();
-                        }else {
-                            SolicitudPermisoImportar.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-                        }
-
-                    }
-                });
-                builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(getActivity(), "Importación cancelada", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-                builder.create().show();
-
-            }
-        });
+        Importar_Archivo.setOnClickListener(v -> lanzarAbrirBackup());
 
         Cambiar_password_maestra.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -212,19 +192,151 @@ public class F_Ajustes extends Fragment {
     }
 
     private void shareFile() {
-        String Carpeta_Archivo = Environment.getExternalStorageDirectory() + "/Documents/Password App/Registros.csv";
-        File file = new File(Carpeta_Archivo);
-        if (!file.exists()) {
-            Toast.makeText(getActivity(), "El archivo no existe", Toast.LENGTH_SHORT).show();
+        String storedUri = sharedPreferences.getString("last_backup_uri", null);
+        if (storedUri == null || storedUri.isEmpty()) {
+            Toast.makeText(getActivity(), "Primero crea un respaldo cifrado", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        Uri uri = Uri.parse(storedUri);
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
-        shareIntent.setType("text/plain");
-        Uri uri = FileProvider.getUriForFile(getActivity(), getActivity().getPackageName() + ".provider", file);
+        shareIntent.setType("application/octet-stream");
         shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(Intent.createChooser(shareIntent, "Compartir archivo"));
+        try {
+            startActivity(Intent.createChooser(shareIntent, "Compartir respaldo cifrado"));
+        } catch (Exception e) {
+            Toast.makeText(getActivity(), "No se pudo compartir el respaldo", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void lanzarCrearBackup() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/octet-stream");
+        intent.putExtra(Intent.EXTRA_TITLE, "PoliPass-backup.ppbk");
+        crearBackupLauncher.launch(intent);
+    }
+
+    private void lanzarAbrirBackup() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/octet-stream");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        abrirBackupLauncher.launch(intent);
+    }
+
+    private void mostrarDialogoExportarBackup(Uri destination) {
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int pad = (int) (20 * getResources().getDisplayMetrics().density);
+        layout.setPadding(pad, pad / 2, pad, 0);
+
+        EditText password = new EditText(requireContext());
+        password.setHint("Contraseña de respaldo (mín. 8)");
+        password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        layout.addView(password);
+
+        EditText confirm = new EditText(requireContext());
+        confirm.setHint("Confirmar contraseña de respaldo");
+        confirm.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        layout.addView(confirm);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Crear respaldo cifrado")
+                .setMessage("Esta contraseña será necesaria para restaurar la bóveda. PoliPass no la guarda.")
+                .setView(layout)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Crear respaldo", null)
+                .create();
+
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String first = password.getText().toString();
+            String second = confirm.getText().toString();
+            if (first.length() < VaultBackupManager.MIN_BACKUP_PASSWORD_LENGTH) {
+                password.setError("Mínimo " + VaultBackupManager.MIN_BACKUP_PASSWORD_LENGTH + " caracteres");
+                return;
+            }
+            if (!first.equals(second)) {
+                confirm.setError("Las contraseñas no coinciden");
+                return;
+            }
+
+            dialog.dismiss();
+            ejecutarExportacionBackup(destination, first);
+        }));
+        dialog.show();
+    }
+
+    private void ejecutarExportacionBackup(Uri destination, String password) {
+        Toast.makeText(requireContext(), "Creando respaldo cifrado...", Toast.LENGTH_SHORT).show();
+        SecurityTaskRunner.execute(() -> {
+            try {
+                VaultBackupManager.writeBackup(requireContext(), destination, password);
+                if (!isAdded()) return;
+                requireActivity().runOnUiThread(() -> {
+                    sharedPreferences.edit().putString("last_backup_uri", destination.toString()).apply();
+                    Toast.makeText(requireContext(), "Respaldo cifrado creado correctamente", Toast.LENGTH_LONG).show();
+                });
+            } catch (Exception e) {
+                if (!isAdded()) return;
+                requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(),
+                        "No se pudo crear el respaldo: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    private void mostrarDialogoImportarBackup(Uri source) {
+        EditText password = new EditText(requireContext());
+        password.setHint("Contraseña de respaldo");
+        password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        int pad = (int) (20 * getResources().getDisplayMetrics().density);
+        password.setPadding(pad, 0, pad, 0);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Restaurar respaldo cifrado")
+                .setMessage("La bóveda actual será reemplazada únicamente si el archivo y la contraseña son válidos.")
+                .setView(password)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Restaurar", null)
+                .create();
+
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String pass = password.getText().toString();
+            if (pass.length() < VaultBackupManager.MIN_BACKUP_PASSWORD_LENGTH) {
+                password.setError("Mínimo " + VaultBackupManager.MIN_BACKUP_PASSWORD_LENGTH + " caracteres");
+                return;
+            }
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("¿Confirmar restauración?")
+                    .setMessage("Se sustituirán los registros actuales por el contenido del respaldo.")
+                    .setNegativeButton("Cancelar", null)
+                    .setPositiveButton("Sí, restaurar", (confirmDialog, which) -> {
+                        dialog.dismiss();
+                        ejecutarImportacionBackup(source, pass);
+                    })
+                    .show();
+        }));
+        dialog.show();
+    }
+
+    private void ejecutarImportacionBackup(Uri source, String password) {
+        Toast.makeText(requireContext(), "Validando y restaurando respaldo...", Toast.LENGTH_SHORT).show();
+        SecurityTaskRunner.execute(() -> {
+            try {
+                VaultBackupManager.restoreBackup(requireContext(), source, password);
+                if (!isAdded()) return;
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(requireContext(), "Respaldo restaurado correctamente", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(requireContext(), MainActivity.class));
+                    requireActivity().finish();
+                });
+            } catch (Exception e) {
+                if (!isAdded()) return;
+                requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(),
+                        "No se pudo restaurar el respaldo: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        });
     }
 
     private void Dialog_Eliminar_Registros() {
@@ -445,7 +557,6 @@ public class F_Ajustes extends Fragment {
 
         EditText Et_Numero_Intentos = dialogView.findViewById(R.id.Et_Numero_Intentos);
         SwitchCompat HabAutoDes = dialogView.findViewById(R.id.HabAutoDes);
-        SwitchCompat HabExportCSV = dialogView.findViewById(R.id.HabExportCSV);
 
         // Configurar el EditText con el número máximo de intentos actual
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
@@ -454,9 +565,7 @@ public class F_Ajustes extends Fragment {
 
         // Configurar el SwitchCompat según el estado actual de la autodestrucción
         boolean isAutoDestructionEnabled = sharedPreferences.getBoolean("auto_destruction_enabled", false);
-        boolean isExportarEnabled = sharedPreferences.getBoolean("export_csv_enabled", false);
         HabAutoDes.setChecked(isAutoDestructionEnabled);
-        HabExportCSV.setChecked(isExportarEnabled);
 
         builder.setPositiveButton("Guardar", new DialogInterface.OnClickListener() {
             @Override
@@ -486,14 +595,6 @@ public class F_Ajustes extends Fragment {
         });
 
         // Manejar el cambio en el estado del SwitchCompat
-        HabExportCSV.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putBoolean("export_csv_enabled", isChecked);
-                editor.apply();
-            }
-        });
 
         builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
             @Override
@@ -505,92 +606,6 @@ public class F_Ajustes extends Fragment {
         // Mostrar el cuadro de diálogo
         AlertDialog dialog = builder.create();
         dialog.show();
-    }
-
-    public void ExportarRegistros() throws Exception {
-        Log.d("ExportCSV", "Starting exportToCSV method...");
-
-        //Nombre de la carpeta
-        File carpeta = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Password App");
-
-        boolean carpetaCreada = false;
-
-        if (!carpeta.exists()){
-            //Si la carpeta no existe, creamos una nueva
-            carpetaCreada = carpeta.mkdirs();
-        }
-
-        //Nombre del archivo
-        String csvnombreArchivo = "Registros.csv";
-        //Concatenar el nombre de la carpeta y del archivo
-        String Carpeta_Archivo = carpeta + "/" + csvnombreArchivo;
-
-        /*Obtener el registro que vamos a exportar*/
-        ArrayList<Password> registroList = new ArrayList<>();
-        registroList = bdHelper.ObtenerTodosRegistros(ordenarTituloAsc);
-
-        try (FileWriter fileWriter = new FileWriter(Carpeta_Archivo)) {
-            for (Password registro : registroList) {
-                fileWriter.append("" + registro.getId()).append(",");
-                fileWriter.append("" + registro.getTitulo().replace("\n", " ")).append(",");
-                fileWriter.append("" + registro.getCuenta().replace("\n", " ")).append(",");
-                fileWriter.append("" + registro.getNombre_usuario().replace("\n", " ")).append(",");
-                fileWriter.append("" + Encrypt.encrypt(registro.getPassword(), true).trim().replace("\n", " ")).append(",");
-                fileWriter.append("" + registro.getSitio_web().replace("\n", " ")).append(",");
-                fileWriter.append("" + registro.getNota().replace("\n", " ")).append(",");
-                fileWriter.append("" + registro.getT_registro()).append(",");
-                fileWriter.append("" + registro.getT_actualiacion()).append("\n");
-            }
-            Toast.makeText(getActivity(), "Se ha exportado el archivo CSV con éxito", Toast.LENGTH_SHORT).show();
-
-        } catch (Exception e) {
-            Log.e("Export", "Error al exportar CSV: " + e.getMessage(), e);
-            Toast.makeText(getActivity(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-
-    }
-
-    private void ImportarRegistros() {
-        //Establecer la ruta
-        String Carpeta_Archivo = Environment.getExternalStorageDirectory()+ "/Documents/" + "/Password App/" + "Registros.csv";
-        File file = new File(Carpeta_Archivo);
-        if (file.exists()){
-            // Si el respaldo existe
-            try {
-                CSVReader csvReader = new CSVReader(new FileReader(file.getAbsoluteFile()));
-                String [] nextLine;
-                while ((nextLine = csvReader.readNext())!=null){
-                    String ids = nextLine[0];
-                    String titulo = nextLine[1].replace("\n", " ");
-                    String cuenta = nextLine[2].replace("\n", " ");
-                    String nombre_usuario = nextLine[3].replace("\n", " ");
-                    String password = nextLine[4].replace("\n", " ");
-                    String sitio_web = nextLine[5].replace("\n", " ");
-                    String nota = nextLine[6].replace("\n", " ");
-                    String tiempoR = nextLine[7];
-                    String tiempoA = nextLine[8];
-
-                    password = Encrypt.encrypt(password, false);
-
-                    long id = bdHelper.insertarRegistro(
-                            ""+titulo,
-                            ""+ cuenta,
-                            ""+ nombre_usuario,
-                            ""+password,
-                            ""+sitio_web,
-                            ""+ nota,
-                            ""+tiempoR,
-                            ""+tiempoA);
-                }
-                Toast.makeText(getActivity(), "Archivo CSV importado con éxito", Toast.LENGTH_SHORT).show();
-            }catch (Exception e){
-                Toast.makeText(getActivity(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        }
-        else {
-            Toast.makeText(getActivity(), "No existe un respaldo", Toast.LENGTH_SHORT).show();
-        }
-
     }
 
     private void CuadroDialogoPasswordMaestra() {
@@ -658,34 +673,4 @@ public class F_Ajustes extends Fragment {
     }
 
 
-    //Permiso exportar registro
-    private ActivityResultLauncher<String> SolicitudPermisoExportar =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), Concede_permiso_exportar -> {
-
-                int permiso = ContextCompat.checkSelfPermission(getActivity(),Manifest.permission.WRITE_EXTERNAL_STORAGE);
-
-                if (permiso == PackageManager.PERMISSION_GRANTED){
-                    try {
-                        ExportarRegistros();
-                        Toast.makeText(getActivity(), "Permiso consedido", Toast.LENGTH_SHORT).show();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }else {
-                    Toast.makeText(getActivity(), "Permiso denegado", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-    //Permiso importar registro
-    private ActivityResultLauncher<String> SolicitudPermisoImportar =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), Concede_permiso_importar -> {
-                int permiso = ContextCompat.checkSelfPermission(getActivity(),Manifest.permission.WRITE_EXTERNAL_STORAGE);
-
-                if (permiso == PackageManager.PERMISSION_GRANTED){
-                    ImportarRegistros();
-                    Toast.makeText(getActivity(), "Permiso consedido", Toast.LENGTH_SHORT).show();
-                }else {
-                    Toast.makeText(getActivity(), "Permiso denegado", Toast.LENGTH_SHORT).show();
-                }
-            });
 }

@@ -76,10 +76,10 @@
     <!--Ajustes-->
     <string name="Txt_Ajustes">Ajustes</string>
     <string name="Eliminar_Todos_Registros">Eliminar todos los registros</string>
-    <string name="Exportar_Archivo">Exportar archivo CSV</string>
-    <string name="Importar_Archivo">Importar archivo CSV</string>
+    <string name="Exportar_Archivo">Exportar respaldo cifrado</string>
+    <string name="Importar_Archivo">Restaurar respaldo cifrado</string>
     <string name="Cambiar_password_maestra">Cambiar contraseña maestra</string>
-    <string name="Compartir">Compartir Registros CSV</string>
+    <string name="Compartir">Compartir último respaldo</string>
     <string name="Autodestruccion">Configurar Autodestrucción</string>
     <string name="Habilitar_Autodestruccion">Habilitar Autodestruccion  </string>
     <string name="Configurar_Preguntas_Recuperacion">Configurar Preguntas Recuperación</string>
@@ -105,7 +105,6 @@
     <!--Cuadro de diálogo autodestrucción-->
     <string name="Txt_Autodestruccion_Ajustes">¿Cuántos intentos de inicio de sesión fallidos activarán la Autodestrucción?</string>
     <string name="Et_Número_de_Intentos">Número de intentos: </string>
-    <string name="Habilitar_Exportar_CSV">Exportar a CSV antes de Autodrestrucción</string>
 
     <!--Cuadro de diálogo Preguntas Seguras Settings-->
     <string name="Txt_Cuantas_Preguntas">¿Cuántas preguntas desea establecer para la recuperación de la contraseña maestra?</string>

@@ -6,16 +6,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
-import android.Manifest;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,7 +25,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.redsytem.passwordapp.BaseDeDatos.BDHelper;
-import com.redsytem.passwordapp.Fragmentos.F_Ajustes;
 import com.redsytem.passwordapp.MainActivity;
 import com.redsytem.passwordapp.R;
 import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
@@ -59,8 +54,6 @@ public class Logeo_usuario extends AppCompatActivity {
         setContentView(R.layout.activity_logeo_usuario);
         InicializarVariables();
 
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        F_Ajustes fragment = (F_Ajustes) fragmentManager.findFragmentById(R.id.f_ajustes);
         bdHelper = new BDHelper(this);
         dialog = new Dialog(Logeo_usuario.this);
         // El login de la contraseña maestra usa el SharedPreferences de MasterPasswordStore (mi_pref).
@@ -72,14 +65,6 @@ public class Logeo_usuario extends AppCompatActivity {
             Btn_Recuperar.setVisibility(View.VISIBLE);
         } else {
             Btn_Recuperar.setVisibility(View.GONE);
-        }
-
-
-        if (fragment == null) {
-            fragment = new F_Ajustes();
-            fragmentManager.beginTransaction()
-                    .add(fragment, "F_Ajustes")
-                    .commit();
         }
 
         Btn_Recuperar.setOnClickListener(new View.OnClickListener() {
@@ -321,34 +306,14 @@ public class Logeo_usuario extends AppCompatActivity {
     private void handleFailedAttempt() {
         SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         boolean isAutoDestructionEnabled = sharedPreferences.getBoolean("auto_destruction_enabled", false);
-        boolean isExportarEnabled = sharedPreferences.getBoolean("export_csv_enabled", false);
         int maxAttempts = sharedPreferences.getInt("max_attempts", 3);
 
         if (failedAttempts >= maxAttempts && isAutoDestructionEnabled) {
             Toast.makeText(Logeo_usuario.this, "¡Intentos Máximos Superados Autodestruyendo!", Toast.LENGTH_SHORT).show();
             try {
-                if(isExportarEnabled){
-                    FragmentManager fragmentManager = getSupportFragmentManager();
-                    F_Ajustes fragment = (F_Ajustes) fragmentManager.findFragmentByTag("F_Ajustes");
-                    if (fragment != null) {
-                        try {
-                            if (ContextCompat.checkSelfPermission(Logeo_usuario.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                                fragment.ExportarRegistros();
-                            } else {
-                                Toast.makeText(Logeo_usuario.this, "Permiso denegado para escribir en el almacenamiento externo", Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (Exception e) {
-                            Log.e("Logeo_usuario", "Error al exportar registros", e);
-                            Toast.makeText(Logeo_usuario.this, "Error al exportar registros: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Log.e("Logeo_usuario", "El fragmento F_Ajustes no está disponible");
-                    }
-                }
                 bdHelper.EliminarTodosRegistros();
             } catch (Exception e) {
-                Log.e("Logeo_usuario", "Error al eliminar o exportar registros: " + e.getMessage(), e);
-                Toast.makeText(Logeo_usuario.this, "Error al eliminar o exportar registros: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("Logeo_usuario", "Error al eliminar registros: " + e.getMessage(), e);
             }
         } else {
             Toast.makeText(Logeo_usuario.this, "Intento fallido", Toast.LENGTH_SHORT).show();

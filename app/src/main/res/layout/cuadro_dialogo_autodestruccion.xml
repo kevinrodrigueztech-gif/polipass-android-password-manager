@@ -88,22 +88,6 @@
             tools:layout_editor_absoluteX="10dp"
             tools:layout_editor_absoluteY="10dp" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/HabExportCSV"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:drawablePadding="10dp"
-            android:focusable="true"
-            android:fontFamily="@font/dosis_bold"
-            android:foreground="?android:attr/selectableItemBackground"
-            android:minHeight="48dp"
-            android:text="@string/Habilitar_Exportar_CSV"
-            android:textSize="20sp"
-            tools:ignore="MissingConstraints,UseSwitchCompatOrMaterialXml"
-            tools:layout_editor_absoluteX="10dp"
-            tools:layout_editor_absoluteY="10dp" />
-
     </androidx.appcompat.widget.LinearLayoutCompat>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
