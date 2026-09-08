@@ -33,6 +33,7 @@ import com.redsytem.passwordapp.Fragmentos.F_Ajustes;
 import com.redsytem.passwordapp.MainActivity;
 import com.redsytem.passwordapp.R;
 import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
+import com.redsytem.passwordapp.Seguridad.RecoveryAnswerStore;
 
 public class Logeo_usuario extends AppCompatActivity {
 
@@ -61,8 +62,10 @@ public class Logeo_usuario extends AppCompatActivity {
         F_Ajustes fragment = (F_Ajustes) fragmentManager.findFragmentById(R.id.f_ajustes);
         bdHelper = new BDHelper(this);
         dialog = new Dialog(Logeo_usuario.this);
-        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        boolean HabPregSecure = sharedPreferences.getBoolean("question_enabled", false);
+        // El login de la contraseña maestra usa el SharedPreferences de MasterPasswordStore (mi_pref).
+        // MyPrefs se reserva para configuración y preguntas de recuperación.
+        SharedPreferences recoveryPreferences = getSharedPreferences(RecoveryAnswerStore.SHARED_PREF, Context.MODE_PRIVATE);
+        boolean HabPregSecure = recoveryPreferences.getBoolean("question_enabled", false);
 
         if (HabPregSecure) {
             Btn_Recuperar.setVisibility(View.VISIBLE);
@@ -153,23 +156,21 @@ public class Logeo_usuario extends AppCompatActivity {
         EditText Et_Respuesta_Dos = dialogView.findViewById(R.id.Et_Respuesta_Dos);
         EditText Et_Respuesta_Tres = dialogView.findViewById(R.id.Et_Respuesta_Tres);
 
-        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        SharedPreferences recoveryPreferences = getSharedPreferences(
+                RecoveryAnswerStore.SHARED_PREF, Context.MODE_PRIVATE);
 
-        // Obtener y establecer las preguntas en los TextView correspondientes
-        String PreguntaU = sharedPreferences.getString("PreguntaUno", "¿Nombre de tu mascota?");
-        String PreguntaD = sharedPreferences.getString("PreguntaDos", "¿Comida favorita?");
-        String PreguntaT = sharedPreferences.getString("PreguntaTres", "¿Tu lugar favorito?");
+        String PreguntaU = recoveryPreferences.getString("PreguntaUno", "¿Nombre de tu mascota?");
+        String PreguntaD = recoveryPreferences.getString("PreguntaDos", "¿Comida favorita?");
+        String PreguntaT = recoveryPreferences.getString("PreguntaTres", "¿Tu lugar favorito?");
 
         TvPreguntaUno.setText(PreguntaU);
         TvPreguntaDos.setText(PreguntaD);
         TvPreguntaTres.setText(PreguntaT);
 
-        // Obtener el estado de las preguntas seleccionadas
-        boolean seleccionadoUno = sharedPreferences.getBoolean("seleccionadoUno", false);
-        boolean seleccionadoDos = sharedPreferences.getBoolean("seleccionadoDos", false);
-        boolean seleccionadoTres = sharedPreferences.getBoolean("seleccionadoTres", false);
+        boolean seleccionadoUno = recoveryPreferences.getBoolean("seleccionadoUno", false);
+        boolean seleccionadoDos = recoveryPreferences.getBoolean("seleccionadoDos", false);
+        boolean seleccionadoTres = recoveryPreferences.getBoolean("seleccionadoTres", false);
 
-        // Configurar visibilidad de acuerdo a la pregunta seleccionada
         if (seleccionadoUno) {
             TvPreguntaUno.setVisibility(View.VISIBLE);
             Et_Respuesta_Uno.setVisibility(View.VISIBLE);
@@ -193,51 +194,85 @@ public class Logeo_usuario extends AppCompatActivity {
             Et_Respuesta_Tres.setVisibility(View.VISIBLE);
         }
 
-        builder.setPositiveButton("Guardar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String respuestaUno = Et_Respuesta_Uno.getText().toString().trim();
-                String respuestaDos = Et_Respuesta_Dos.getText().toString().trim();
-                String respuestaTres = Et_Respuesta_Tres.getText().toString().trim();
+        builder.setPositiveButton("Verificar", (dialog, which) -> {
+            boolean respuestasCorrectas;
+            String respuestaUno = Et_Respuesta_Uno.getText().toString();
+            String respuestaDos = Et_Respuesta_Dos.getText().toString();
+            String respuestaTres = Et_Respuesta_Tres.getText().toString();
 
-                boolean respuestasCorrectas = false;
+            if (seleccionadoUno) {
+                respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno);
+            } else if (seleccionadoDos) {
+                respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno)
+                        && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 1, respuestaDos);
+            } else if (seleccionadoTres) {
+                respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno)
+                        && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 1, respuestaDos)
+                        && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 2, respuestaTres);
+            } else {
+                respuestasCorrectas = false;
+            }
 
-                if (seleccionadoUno) {
-                    String respuestaAlmacenadaUno = sharedPreferences.getString("RespuestaUno", "");
-                    respuestasCorrectas = respuestaUno.equals(respuestaAlmacenadaUno);
-                } else if (seleccionadoDos) {
-                    String respuestaAlmacenadaUno = sharedPreferences.getString("RespuestaUno", "");
-                    String respuestaAlmacenadaDos = sharedPreferences.getString("RespuestaDos", "");
-                    respuestasCorrectas = respuestaUno.equals(respuestaAlmacenadaUno) &&
-                            respuestaDos.equals(respuestaAlmacenadaDos);
-                } else if (seleccionadoTres) {
-                    String respuestaAlmacenadaUno = sharedPreferences.getString("RespuestaUno", "");
-                    String respuestaAlmacenadaDos = sharedPreferences.getString("RespuestaDos", "");
-                    String respuestaAlmacenadaTres = sharedPreferences.getString("RespuestaTres", "");
-                    respuestasCorrectas = respuestaUno.equals(respuestaAlmacenadaUno) &&
-                            respuestaDos.equals(respuestaAlmacenadaDos) &&
-                            respuestaTres.equals(respuestaAlmacenadaTres);
-                }
-
-                if (respuestasCorrectas) {
-                    loginSuccess();
-                } else {
-                    Toast.makeText(Logeo_usuario.this, "Respuestas incorrectas, intenta de nuevo", Toast.LENGTH_SHORT).show();
-                }
+            if (respuestasCorrectas) {
+                showRecoveryPasswordResetDialog();
+            } else {
+                Toast.makeText(Logeo_usuario.this,
+                        "Respuestas incorrectas, intenta de nuevo", Toast.LENGTH_SHORT).show();
             }
         });
 
-        builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
+        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
 
         AlertDialog alertDialog = builder.create();
         alertDialog.show();
     }
 
+    /**
+     * Recovery only proves ownership of the vault. It does not derive or store
+     * the master password. After successful recovery, the user creates a new
+     * master-password verifier while the existing Android Keystore vault key
+     * remains unchanged.
+     */
+    private void showRecoveryPasswordResetDialog() {
+        final Dialog resetDialog = new Dialog(Logeo_usuario.this);
+        resetDialog.setContentView(R.layout.cuadro_dialogo_password_maestra);
+        resetDialog.setCancelable(false);
+
+        EditText newPassword = resetDialog.findViewById(R.id.Et_nuevo_password_maestra);
+        EditText confirmPassword = resetDialog.findViewById(R.id.Et_C_nuevo_password_maestra);
+        Button changeButton = resetDialog.findViewById(R.id.Btn_cambiar_password_maestra);
+        Button cancelButton = resetDialog.findViewById(R.id.Btn_cancelar_password_maestra);
+
+        TextView title = resetDialog.findViewById(R.id.textViewTitulo);
+        TextView note = resetDialog.findViewById(R.id.textViewPasswordNota);
+        title.setText("Restablecer contraseña maestra");
+        note.setText("La bóveda conserva su clave de cifrado. Solo se reemplazará el verificador de la contraseña maestra.");
+        changeButton.setText("Restablecer");
+
+        changeButton.setOnClickListener(v -> {
+            String password = newPassword.getText().toString().trim();
+            String confirmation = confirmPassword.getText().toString().trim();
+
+            if (password.isEmpty()) {
+                Toast.makeText(Logeo_usuario.this, "Ingrese una nueva contraseña", Toast.LENGTH_SHORT).show();
+            } else if (confirmation.isEmpty()) {
+                Toast.makeText(Logeo_usuario.this, "Confirme la nueva contraseña", Toast.LENGTH_SHORT).show();
+            } else if (password.length() < 6) {
+                Toast.makeText(Logeo_usuario.this, "La contraseña debe tener al menos 6 caracteres", Toast.LENGTH_SHORT).show();
+            } else if (!password.equals(confirmation)) {
+                Toast.makeText(Logeo_usuario.this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
+            } else {
+                MasterPasswordStore.save(sharedPreferences, password);
+                resetDialog.dismiss();
+                Toast.makeText(Logeo_usuario.this,
+                        "Contraseña maestra restablecida correctamente", Toast.LENGTH_SHORT).show();
+                loginSuccess();
+            }
+        });
+
+        cancelButton.setOnClickListener(v -> resetDialog.dismiss());
+        resetDialog.show();
+    }
 
 
 

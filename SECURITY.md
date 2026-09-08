@@ -6,8 +6,8 @@ PoliPass V1 is an academic/portfolio project and is **not production-ready passw
 
 The most important known security limitations are documented in the repository README and include:
 
-- plaintext master-password storage in `SharedPreferences`
-- plaintext recovery answers in `SharedPreferences`
+- knowledge-based recovery remains susceptible to weak human-chosen answers
+- the vault key is currently device-bound to Android Keystore, so secure cross-device recovery is not implemented
 - encryption limited to the password field rather than the full record
 - non-encrypted CSV export/import
 - incomplete Autofill implementation
@@ -34,7 +34,7 @@ Never include real passwords, tokens, private keys, recovery answers, or persona
 
 V2 should establish a formal threat model and address, at minimum:
 
-1. password-derived key hierarchy and secure key rotation
+1. explicit vault-key wrapping/rotation and secure recovery semantics
 2. authenticated encrypted vault storage
 3. encrypted backup/restore with integrity protection
 4. safer recovery design
@@ -42,3 +42,9 @@ V2 should establish a formal threat model and address, at minimum:
 6. screenshot/screen-recording protections on sensitive screens
 7. Autofill authorization and isolation
 8. automated security regression tests
+
+## Recovery answers
+
+Recovery answers are stored as salted PBKDF2-HMAC-SHA256 verifiers and are compared without storing the original answers. Existing V1 plaintext answers are migrated to the verifier format after a successful recovery attempt.
+
+Recovery is intentionally separate from vault encryption: answering the recovery questions authorizes a master-password reset, but the answers are not used as a key for the encrypted records.

@@ -4,7 +4,7 @@
 
 PoliPass is an academic and portfolio project focused on Android application development, local data persistence, cryptography, biometric authentication, and the Android Autofill Framework.
 
-> **Security notice:** this repository contains the original **V1** implementation. It is intended for technical review and learning, **not for storing real-world production credentials**. The current version has documented security debt, especially around master-password storage, recovery answers, backup/export, and Autofill.
+> **Security notice:** this is an academic/portfolio password-manager project and is **not intended for real-world production credentials**. The current release documents remaining security debt around full-record encryption, backup/export, and Autofill.
 
 ## What this project demonstrates
 
@@ -43,7 +43,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the main data flows and s
 
 The V1 implementation encrypts the **stored password field** using AES-GCM with a 256-bit key generated and retained by Android Keystore. Each encryption operation generates a fresh GCM IV and stores the IV alongside the ciphertext.
 
-The rest of the vault record is not encrypted by the current implementation. In addition, the master password and recovery answers are currently stored directly in `SharedPreferences`. These are known limitations and are intentionally called out rather than being presented as production-grade security.
+The rest of the vault record is not encrypted by the current implementation. The master password is stored only as a PBKDF2 verifier. Recovery answers are also stored as independent salted PBKDF2 verifiers. These limitations are intentionally documented rather than presented as production-grade security.
 
 For a deeper review, see [`SECURITY.md`](SECURITY.md).
 
@@ -99,8 +99,8 @@ The current test suite is intentionally small. Expanding coverage is part of the
 
 The following items are tracked as technical debt rather than hidden:
 
-1. **Master password storage:** the master password is stored directly in `SharedPreferences` and should be redesigned around a password-derived verification/key-unwrapping scheme.
-2. **Recovery answers:** recovery answers are stored in plaintext and should be replaced with a safer recovery model.
+1. **Vault key hierarchy:** the current vault key remains device-bound in Android Keystore; a future release can add explicit key-wrapping/rotation semantics and stronger cross-device recovery.
+2. **Recovery answers:** answers now use salted PBKDF2 verifiers, but knowledge-based recovery remains weaker than a modern recovery factor because answers may be guessable.
 3. **Database upgrades:** `onUpgrade()` currently recreates the table instead of performing versioned migrations.
 4. **Vault coverage:** only the password column is encrypted; other record fields remain plaintext in SQLite.
 5. **Backup/export:** CSV export is not an encrypted portable vault format and must not be treated as a secure backup mechanism.
@@ -146,6 +146,8 @@ La contraseña maestra no se almacena en texto plano. Se guarda un verificador d
 
 Las instalaciones de V1 que todavía contienen `password` en `SharedPreferences` se migran automáticamente al nuevo formato después del primer inicio de sesión correcto; las claves heredadas se eliminan al finalizar la migración.
 
-La contraseña maestra funciona actualmente como mecanismo de autenticación. La clave AES-GCM usada para cifrar los registros continúa gestionándose mediante Android Keystore, por lo que esta mejora no requiere volver a cifrar los registros existentes.
+La contraseña maestra funciona como mecanismo de autenticación y nunca se almacena en texto plano. La clave AES-GCM usada por la capa actual de cifrado sigue gestionándose mediante Android Keystore y es independiente del verificador de la contraseña.
 
-> **Nota V1:** las respuestas de recuperación siguen siendo una deuda de seguridad independiente. También queda pendiente desacoplar completamente el acceso de recuperación de la autenticación principal.
+Las respuestas de recuperación tampoco se almacenan en texto plano. Cada respuesta usa un salt independiente y PBKDF2-HMAC-SHA256. Una recuperación exitosa no revela ni reconstruye la contraseña anterior: únicamente autoriza al usuario a establecer una nueva contraseña maestra que genera otro verificador.
+
+Las instalaciones heredadas con respuestas V1 se migran de forma gradual después de una verificación correcta.

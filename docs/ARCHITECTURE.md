@@ -54,3 +54,11 @@ A useful code-review sequence is:
 El flujo de autenticación usa `MasterPasswordStore` y `MasterPasswordHasher`. El almacenamiento contiene `master_password_hash`, `master_password_salt` y `master_password_iterations`; la contraseña maestra original no se persiste.
 
 Para instalaciones heredadas de V1, el repositorio conserva una ruta de migración de una sola vez: valida el valor `password`, genera el nuevo verificador y elimina `password` y `c_password`.
+
+## Recovery architecture (V2+)
+
+Recovery answers are authentication factors, not encryption keys. Their values are never persisted in plaintext: each answer uses its own random salt and PBKDF2-HMAC-SHA256 verifier.
+
+A successful recovery does not reconstruct the master password. Instead, it proves control of the configured recovery factors and lets the user create a new master-password verifier. The vault encryption key remains the Android Keystore key already used by the existing database encryption layer.
+
+This separation means changing or recovering the master password does not require decrypting and re-encrypting every vault record.

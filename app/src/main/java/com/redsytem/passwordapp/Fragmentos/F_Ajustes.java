@@ -55,6 +55,7 @@ import java.util.Objects;
 
 import com.redsytem.passwordapp.R;
 import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
+import com.redsytem.passwordapp.Seguridad.RecoveryAnswerStore;
 
 public class F_Ajustes extends Fragment {
 
@@ -280,12 +281,6 @@ public class F_Ajustes extends Fragment {
         EtPreguntaDos.setText(String.valueOf(PreguntaD));
         String PreguntaT = sharedPreferences.getString("PreguntaTres", "¿Tu lugar favorito?");
         EtPreguntaTres.setText(String.valueOf(PreguntaT));
-        String RespuestaU = sharedPreferences.getString("RespuestaUno", "");
-        EtRespuestaUno.setText(String.valueOf(RespuestaU));
-        String RespuestaD = sharedPreferences.getString("RespuestaDos", "");
-        EtRespuestaDos.setText(String.valueOf(RespuestaD));
-        String RespuestaT = sharedPreferences.getString("RespuestaTres", "");
-        EtRespuestaTres.setText(String.valueOf(RespuestaT));
         boolean habilitarPreguntas = sharedPreferences.getBoolean("question_enabled", false);
         HabPregSecure.setChecked(habilitarPreguntas);
         boolean seleccionadoUno = sharedPreferences.getBoolean("seleccionadoUno", false);
@@ -330,49 +325,58 @@ public class F_Ajustes extends Fragment {
             String inputPT = EtPreguntaTres.getText().toString().trim();
             String inputRT = EtRespuestaTres.getText().toString().trim();
 
+            boolean enabled = HabPregSecure.isChecked();
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("question_enabled", HabPregSecure.isChecked());
-            if (pregunta_uno.isChecked()) {
-                if (!inputPU.isEmpty() && !inputRU.isEmpty()) {
-                    editor.putString("PreguntaUno", inputPU);
-                    editor.putString("RespuestaUno", inputRU);
-                    editor.putBoolean("seleccionadoUno", true);
-                    editor.putBoolean("seleccionadoDos", false);
-                    editor.putBoolean("seleccionadoTres", false);
-                    Toast.makeText(getActivity(), "Pregunta y Respuesta Uno Guardadas", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getActivity(), "Error al guardar pregunta y respuesta uno", Toast.LENGTH_SHORT).show();
-                }
-            } else if (pregunta_dos.isChecked()) {
-                if (!inputPU.isEmpty() && !inputRU.isEmpty() && !inputPD.isEmpty() && !inputRD.isEmpty()) {
-                    editor.putString("PreguntaUno", inputPU);
-                    editor.putString("RespuestaUno", inputRU);
-                    editor.putString("PreguntaDos", inputPD);
-                    editor.putString("RespuestaDos", inputRD);
-                    editor.putBoolean("seleccionadoUno", false);
-                    editor.putBoolean("seleccionadoDos", true);
-                    editor.putBoolean("seleccionadoTres", false);
-                    Toast.makeText(getActivity(), "Preguntas y Respuestas Uno y Dos Guardadas", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getActivity(), "Error al guardar preguntas y respuestas uno y dos", Toast.LENGTH_SHORT).show();
-                }
-            } else if (pregunta_tres.isChecked()) {
-                if (!inputPU.isEmpty() && !inputRU.isEmpty() && !inputPD.isEmpty() && !inputRD.isEmpty() && !inputPT.isEmpty() && !inputRT.isEmpty()) {
-                    editor.putString("PreguntaUno", inputPU);
-                    editor.putString("RespuestaUno", inputRU);
-                    editor.putString("PreguntaDos", inputPD);
-                    editor.putString("RespuestaDos", inputRD);
-                    editor.putString("PreguntaTres", inputPT);
-                    editor.putString("RespuestaTres", inputRT);
-                    editor.putBoolean("seleccionadoUno", false);
-                    editor.putBoolean("seleccionadoDos", false);
-                    editor.putBoolean("seleccionadoTres", true);
-                    Toast.makeText(getActivity(), "Preguntas y Respuestas Guardadas", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getActivity(), "Error al guardar todas las preguntas y respuestas", Toast.LENGTH_SHORT).show();
-                }
+            editor.putBoolean("question_enabled", enabled);
+
+            if (!enabled) {
+                RecoveryAnswerStore.clearAnswer(sharedPreferences, 0);
+                RecoveryAnswerStore.clearAnswer(sharedPreferences, 1);
+                RecoveryAnswerStore.clearAnswer(sharedPreferences, 2);
+                editor.putBoolean("seleccionadoUno", false)
+                        .putBoolean("seleccionadoDos", false)
+                        .putBoolean("seleccionadoTres", false)
+                        .apply();
+                Toast.makeText(getActivity(), "Recuperación deshabilitada", Toast.LENGTH_SHORT).show();
+                return;
             }
-            editor.apply();
+
+            int selectedCount = 0;
+            if (pregunta_uno.isChecked()) selectedCount = 1;
+            else if (pregunta_dos.isChecked()) selectedCount = 2;
+            else if (pregunta_tres.isChecked()) selectedCount = 3;
+
+            if (selectedCount == 0) {
+                Toast.makeText(getActivity(), "Selecciona al menos una pregunta", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (inputPU.isEmpty() || inputRU.isEmpty() || (selectedCount >= 2 && (inputPD.isEmpty() || inputRD.isEmpty()))
+                    || (selectedCount == 3 && (inputPT.isEmpty() || inputRT.isEmpty()))) {
+                Toast.makeText(getActivity(), "Completa las preguntas y respuestas seleccionadas", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            editor.putString("PreguntaUno", inputPU)
+                    .putString("PreguntaDos", inputPD)
+                    .putString("PreguntaTres", inputPT)
+                    .putBoolean("seleccionadoUno", selectedCount == 1)
+                    .putBoolean("seleccionadoDos", selectedCount == 2)
+                    .putBoolean("seleccionadoTres", selectedCount == 3)
+                    .apply();
+
+            RecoveryAnswerStore.saveAnswer(sharedPreferences, 0, inputRU);
+            if (selectedCount >= 2) {
+                RecoveryAnswerStore.saveAnswer(sharedPreferences, 1, inputRD);
+            } else {
+                RecoveryAnswerStore.clearAnswer(sharedPreferences, 1);
+            }
+            if (selectedCount == 3) {
+                RecoveryAnswerStore.saveAnswer(sharedPreferences, 2, inputRT);
+            } else {
+                RecoveryAnswerStore.clearAnswer(sharedPreferences, 2);
+            }
+
+            Toast.makeText(getActivity(), "Preguntas de recuperación guardadas de forma segura", Toast.LENGTH_SHORT).show();
         });
 
         builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
