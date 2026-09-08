@@ -6,12 +6,11 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -24,14 +23,14 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
 
       - name: Run unit tests
-        run: ./gradlew test --no-daemon
+        run: ./gradlew test
 
       - name: Run Android Lint
-        run: ./gradlew lint --no-daemon
+        run: ./gradlew lint
 
-      - name: Assemble debug APK
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Build debug APK
+        run: ./gradlew assembleDebug

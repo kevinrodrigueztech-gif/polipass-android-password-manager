@@ -9,7 +9,7 @@ The most important known security limitations are documented in the repository R
 - knowledge-based recovery remains susceptible to weak human-chosen answers
 - the local vault key is device-bound to Android Keystore; portable recovery is provided through password-protected backups
 - incomplete Autofill implementation
-- incomplete clipboard and sensitive-screen hardening
+- remaining platform-specific clipboard and sensitive-screen hardening opportunities
 - destructive database recreation during upgrades
 
 These limitations are part of the documented project roadmap and are not vulnerabilities newly discovered after release.
@@ -35,9 +35,9 @@ Future releases should establish a formal threat model and address, at minimum:
 1. stronger recovery factors and secure recovery semantics
 2. explicit, versioned database migrations
 3. encrypted backup format evolution and recovery UX
-4. clipboard lifetime controls
+4. clipboard and sensitive-input hardening
 5. screenshot/screen-recording protections on sensitive screens
-6. Autofill authorization and isolation
+6. complete Autofill authorization and isolation before re-enabling the service
 7. automated security regression tests
 
 ## Recovery answers
@@ -61,3 +61,11 @@ La pérdida de la clave de Android Keystore puede hacer que la base local quede 
 Los respaldos `.ppbk` están diseñados para poder transportarse entre dispositivos. Su seguridad depende de la contraseña de respaldo: sin ella, el contenido autenticado por AES-GCM no puede recuperarse. PoliPass no guarda esa contraseña.
 
 No deben volver a utilizarse exportaciones CSV de la versión anterior para transportar credenciales; el formato CSV no forma parte de la ruta de backup segura de la versión actual.
+
+## V5.3 — hardening de release candidate
+
+- `MainActivity` ya no es un componente exportado; la entrada pública de la aplicación permanece en la actividad lanzadora necesaria.
+- El servicio Autofill incompleto dejó de anunciarse en el `AndroidManifest` hasta contar con una implementación completa y revisada.
+- Se deshabilitó tráfico HTTP en claro mediante `usesCleartextTraffic=false`.
+- Los campos sensibles se marcan para no participar en Autofill del sistema.
+- El manejo del portapapeles de contraseñas usa un único temporizador reutilizable, evitando que una copia anterior borre accidentalmente una posterior.

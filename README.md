@@ -2,9 +2,9 @@
 
 **Local-first Android password manager built in Java.**
 
-PoliPass is an academic and portfolio project focused on Android application development, local data persistence, cryptography, biometric authentication, and the Android Autofill Framework.
+PoliPass is an academic and portfolio project focused on Android application development, local data persistence, cryptography, biometric authentication, and secure portable backups.
 
-> **Security notice:** this is an academic/portfolio password-manager project and is **not intended for real-world production credentials**. The current release documents remaining security debt around recovery design, database migrations, backup lifecycle, and Autofill.
+> **Security notice:** this is an academic/portfolio password-manager project and is **not intended for real-world production credentials**. The current release documents remaining security debt around recovery design, database migrations, backup lifecycle, and large-vault performance.
 
 ## What this project demonstrates
 
@@ -17,7 +17,6 @@ PoliPass is an academic and portfolio project focused on Android application dev
 - Password-protected encrypted backup/restore
 - Configurable failed-login protection and vault clearing
 - Material UI with dark-theme support
-- Initial Android Autofill Service integration
 
 ## Architecture
 
@@ -26,7 +25,6 @@ The current codebase is intentionally simple and easy to inspect:
 ```text
 app/
 └── src/main/java/com/redsytem/passwordapp/
-    ├── AutoFill/            # AutofillService integration (partial)
     ├── BaseDeDatos/         # SQLiteOpenHelper and schema constants
     ├── Detalle/             # Credential detail screen
     ├── Encriptacion/        # Android Keystore + AES/GCM/NoPadding
@@ -59,7 +57,6 @@ For a deeper review, see [`SECURITY.md`](SECURITY.md).
 | Cryptography | AES-GCM / Android Keystore |
 | Authentication | `BiometricPrompt` |
 | Password generation | `SecureRandom` |
-| Autofill | Android Autofill Framework |
 | Animation | Lottie |
 | Build | Gradle + Android Gradle Plugin |
 
@@ -94,15 +91,15 @@ On Windows:
 
 The repository includes starter unit/instrumentation tests and a GitHub Actions workflow that runs Gradle tests, Android Lint, and a debug build on every push and pull request.
 
-The current test suite is intentionally small. Expanding coverage is part of the roadmap, especially for encryption, authentication state, database migrations, backup validation, and Autofill parsing.
+The current test suite is intentionally small. Expanding coverage is part of the roadmap, especially for encryption, authentication state, database migrations, backup validation, and future Autofill parsing.
 
 ## Known limitations
 
 1. **Recovery factors:** knowledge-based recovery can still be weak if users choose predictable answers.
 2. **Database migrations:** the schema now supports full-record encryption, but future schema changes should remain explicitly versioned and migration-safe.
 3. **Backup lifecycle:** encrypted backups are portable, but the user must remember the backup password; PoliPass cannot recover it.
-4. **Autofill:** the Autofill Service is a partial implementation and should not be considered production-ready.
-5. **Clipboard/sensitive UI:** clipboard handling and sensitive-screen protections need further hardening.
+4. **Autofill:** not advertised in the current release; the previous partial service was removed until it can be implemented and reviewed as a complete feature.
+5. **Clipboard/sensitive UI:** password clipboard lifetime is controlled, while further platform-specific hardening can still be added.
 6. **Performance at scale:** full-record search decrypts records in memory, which is appropriate for a small local vault but should be revisited for very large datasets.
 
 ## Roadmap
@@ -110,7 +107,7 @@ The current test suite is intentionally small. Expanding coverage is part of the
 - Strengthen recovery with a less guessable recovery factor
 - Add explicit, versioned database migrations
 - Add backup format version migration and stronger recovery UX
-- Complete Autofill parsing and dataset generation
+- Implement and review Autofill as a complete feature
 - Improve clipboard expiration and sensitive-screen protection
 - Expand unit and instrumentation coverage
 - Add static analysis and dependency-security checks to CI
@@ -125,7 +122,6 @@ For a hiring review, the most relevant areas to inspect first are:
 - [`Encriptacion/Encrypt.java`](app/src/main/java/com/redsytem/passwordapp/Encriptacion/Encrypt.java)
 - [`BaseDeDatos/BDHelper.java`](app/src/main/java/com/redsytem/passwordapp/BaseDeDatos/BDHelper.java)
 - [`Login_usuario/Logeo_usuario.java`](app/src/main/java/com/redsytem/passwordapp/Login_usuario/Logeo_usuario.java)
-- [`AutoFill/PasswordAutofillService.java`](app/src/main/java/com/redsytem/passwordapp/AutoFill/PasswordAutofillService.java)
 
 ## License
 
@@ -160,3 +156,7 @@ PoliPass ya no utiliza CSV para exportar credenciales. El respaldo se genera com
 El contenido de la bóveda se serializa y se cifra con AES-256-GCM usando una clave derivada mediante PBKDF2-HMAC-SHA256. El archivo incluye salt, IV, versión de formato y ciphertext autenticado. Durante la restauración se valida y descifra el archivo completo antes de reemplazar la bóveda; la sustitución de registros se realiza dentro de una transacción de SQLite.
 
 La contraseña de respaldo es independiente de la contraseña maestra. El respaldo no depende de la clave del Android Keystore del dispositivo de origen, por lo que puede restaurarse en otro dispositivo que tenga PoliPass instalado.
+
+## Release hardening
+
+Version 1.2 applies a release-candidate hardening pass: internal activities are not exported unnecessarily, cleartext HTTP is disabled, sensitive input fields opt out of Autofill, and password clipboard clearing uses a single replaceable timer. The incomplete Autofill service is intentionally not registered until it is complete.

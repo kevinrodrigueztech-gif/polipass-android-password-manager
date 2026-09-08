@@ -1,42 +1,28 @@
 # Android Studio / IntelliJ
 .idea/
 *.iml
-*.ipr
-*.iws
+**/.idea/
 
 # Gradle
 .gradle/
 build/
 **/build/
 
-# Local SDK configuration
+# Local Android SDK / machine configuration
 local.properties
 
-# Android build outputs
+# Generated / packaging artifacts
 *.apk
 *.aab
-*.ap_
-*.dex
+*.apks
+*.jks
+*.keystore
+*.hprof
 
-# Native build outputs
-.externalNativeBuild/
-.cxx/
-
-# IDE/user files
-captures/
+# OS/editor files
 .DS_Store
 Thumbs.db
 
 # Temporary files
 *.log
 *.tmp
-
-# Profiling / crash artifacts
-*.hprof
-*.stacktrace
-
-# Kotlin / Java generated metadata
-.kotlin/
-
-# OS/editor metadata
-.vscode/

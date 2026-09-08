@@ -34,9 +34,9 @@ This protects the complete record from simple SQLite inspection while keeping th
 
 For existing V1 installations, the store can migrate the legacy plaintext `password` value after a successful login and then removes the legacy keys.
 
-## Autofill boundary
+## Autofill
 
-`PasswordAutofillService` registers an Android Autofill Service but its fill/save callbacks are not fully implemented. The service therefore represents framework integration work rather than a complete credential-provider implementation.
+Autofill is intentionally deferred. The previous partial service was removed from the manifest so the current release does not advertise an incomplete credential-provider surface. A future implementation should define authorization, vault-unlock behavior, field parsing, dataset creation, and save flows before being enabled.
 
 ## Portfolio review focus
 
@@ -45,8 +45,7 @@ A useful code-review sequence is:
 1. `Encrypt.java` — cryptographic primitive and Keystore usage
 2. `BDHelper.java` — data persistence and encryption integration
 3. `Logeo_usuario.java` — authentication and recovery behavior
-4. `F_Ajustes.java` — security settings and export/import behavior
-5. `PasswordAutofillService.java` — framework integration status
+4. `F_Ajustes.java` — security settings and encrypted backup/restore behavior
 
 
 ## Verificación de la contraseña maestra

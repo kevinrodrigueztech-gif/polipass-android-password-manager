@@ -27,7 +27,7 @@ This document is intended for the first public portfolio upload.
 git init
 git branch -M main
 git add .
-git commit -m "chore: prepare PoliPass V1 for portfolio"
+git commit -m "chore: harden PoliPass release candidate"
 git remote add origin https://github.com/<USERNAME>/polipass-android-password-manager.git
 git push -u origin main
 ```

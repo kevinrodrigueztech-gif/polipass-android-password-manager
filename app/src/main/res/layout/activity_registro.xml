@@ -48,7 +48,10 @@
             android:fontFamily="@font/dosis_bold"
             android:layout_width="match_parent"
             android:textSize="20sp"
-            android:layout_height="wrap_content"/>
+
+            android:layout_height="wrap_content"
+
+            android:importantForAutofill="no" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -65,7 +68,10 @@
             android:fontFamily="@font/dosis_bold"
             android:layout_width="match_parent"
             android:textSize="20sp"
-            android:layout_height="wrap_content"/>
+
+            android:layout_height="wrap_content"
+
+            android:importantForAutofill="no" />
 
     </com.google.android.material.textfield.TextInputLayout>
 

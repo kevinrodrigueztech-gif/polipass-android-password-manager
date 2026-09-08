@@ -13,6 +13,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Spannable;
@@ -46,6 +47,13 @@ public class Detalle_registro extends AppCompatActivity {
 
     BDHelper helper;
     private boolean isUpdatingText = false;
+    private final Handler clipboardHandler = new Handler(Looper.getMainLooper());
+    private final Runnable clearClipboardRunnable = () -> {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(ClipData.newPlainText("PoliPass", ""));
+        }
+    };
 
     Dialog dialog;
 
@@ -101,16 +109,7 @@ public class Detalle_registro extends AppCompatActivity {
             clipboard.setPrimaryClip(clip);
             Toast.makeText(Detalle_registro.this, "Nombre De Usuario Copiado Al Portapapeles", Toast.LENGTH_SHORT).show();
 
-            // Programar la tarea para borrar la contraseña del portapapeles después de 2 minutos
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    // Aquí se ejecuta la acción de borrar del portapapeles
-                    clipboard.setPrimaryClip(ClipData.newPlainText("", ""));
-                    Toast.makeText(Detalle_registro.this, "Contraseña borrada del portapapeles", Toast.LENGTH_SHORT).show();
-                }
-            }, 2 * 60 * 1000); // 2 minutos en milisegundos
+            programarBorradoPortapapeles();
         });
 
         btnCopyPassword.setOnClickListener(v -> {
@@ -120,16 +119,7 @@ public class Detalle_registro extends AppCompatActivity {
             clipboard.setPrimaryClip(clip);
             Toast.makeText(Detalle_registro.this, "Contraseña copiada al portapapeles", Toast.LENGTH_SHORT).show();
 
-            // Programar la tarea para borrar la contraseña del portapapeles después de 2 minutos
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    // Aquí se ejecuta la acción de borrar del portapapeles
-                    clipboard.setPrimaryClip(ClipData.newPlainText("", ""));
-                    Toast.makeText(Detalle_registro.this, "Contraseña borrada del portapapeles", Toast.LENGTH_SHORT).show();
-                }
-            }, 2 * 60 * 1000); // 2 minutos en milisegundos
+            programarBorradoPortapapeles();
         });
 
 
@@ -169,10 +159,22 @@ public class Detalle_registro extends AppCompatActivity {
     private void copyTextToClipboard() {
         String textToCopy = D_Password.getText().toString();
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("Password", textToCopy);
+        ClipData clip = ClipData.newPlainText("PoliPass password", textToCopy);
         clipboard.setPrimaryClip(clip);
+        programarBorradoPortapapeles();
 
         Toast.makeText(this, "Texto copiado al portapapeles", Toast.LENGTH_SHORT).show();
+    }
+
+    private void programarBorradoPortapapeles() {
+        clipboardHandler.removeCallbacks(clearClipboardRunnable);
+        clipboardHandler.postDelayed(clearClipboardRunnable, 2 * 60 * 1000L);
+    }
+
+    @Override
+    protected void onDestroy() {
+        clipboardHandler.removeCallbacks(clearClipboardRunnable);
+        super.onDestroy();
     }
 
     private void applyColorToText(Editable s) {
@@ -221,8 +223,9 @@ public class Detalle_registro extends AppCompatActivity {
         editText.setOnLongClickListener(v -> {
             String textToCopy = editText.getText().toString();
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            ClipData clip = ClipData.newPlainText("Copied Text", textToCopy);
+            ClipData clip = ClipData.newPlainText("PoliPass password", textToCopy);
             clipboard.setPrimaryClip(clip);
+            programarBorradoPortapapeles();
             Toast.makeText(Detalle_registro.this, "Texto copiado al portapapeles", Toast.LENGTH_SHORT).show();
             return true;
         });

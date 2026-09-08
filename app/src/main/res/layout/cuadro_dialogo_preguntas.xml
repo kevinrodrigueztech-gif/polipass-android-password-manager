@@ -75,7 +75,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="invisible"
-            tools:ignore="VisualLintTextFieldSize" />
+            tools:ignore="VisualLintTextFieldSize"
+            android:importantForAutofill="no" />
         <TextView
             android:id="@+id/TvPreguntaDos"
             android:hint="@string/Et_Pregunta_Dos"
@@ -99,7 +100,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="invisible"
-            tools:ignore="VisualLintTextFieldSize" />
+            tools:ignore="VisualLintTextFieldSize"
+            android:importantForAutofill="no" />
         <TextView
             android:id="@+id/TvPreguntaTres"
             android:autofillHints=""
@@ -123,7 +125,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="invisible"
-            tools:ignore="VisualLintTextFieldSize" />
+            tools:ignore="VisualLintTextFieldSize"
+            android:importantForAutofill="no" />
 
 
     </androidx.appcompat.widget.LinearLayoutCompat>
