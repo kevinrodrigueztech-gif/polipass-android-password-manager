@@ -119,8 +119,7 @@
     <string name="Btn_cerrar_imagen">Cerrar</string>
 
     <!--Cuadro de diálogo - password maestra-->
-    <string name="TXT_password_maestra">Su contraseña maestra es:</string>
-    <string name="Password_maestra"> -- </string>
+    <string name="TXT_password_maestra">Cambiar contraseña maestra</string>
     <string name="Et_nuevo_password_maestra">Nueva contraseña maestra</string>
     <string name="Et_C_nuevo_password_maestra">Confirme contraseña maestra</string>
     <string name="Btn_cambiar_password_maestra">Cambiar</string>
@@ -148,7 +147,7 @@
 
     <!--Información de la aplicación-->
     <string name="DesarrolladorTXT">Desarrolladores: \n Neyra García Keila Yael. \n Rodríguez García Kevin Fernando.</string>
-    <string name="CorreoContactoTXT">\nContacto: \n kevin.rodriguez.tech@gmail.com</string>
+    <string name="CorreoContactoTXT">\nContacto: \n [CONTACT_EMAIL]</string>
     <string name="VersionTXT">Versión: 1.0 \n</string>
 
 </resources>

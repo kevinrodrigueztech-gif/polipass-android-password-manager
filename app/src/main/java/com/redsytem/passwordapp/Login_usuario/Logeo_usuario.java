@@ -32,6 +32,7 @@ import com.redsytem.passwordapp.BaseDeDatos.BDHelper;
 import com.redsytem.passwordapp.Fragmentos.F_Ajustes;
 import com.redsytem.passwordapp.MainActivity;
 import com.redsytem.passwordapp.R;
+import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
 
 public class Logeo_usuario extends AppCompatActivity {
 
@@ -43,8 +44,7 @@ public class Logeo_usuario extends AppCompatActivity {
     TextView Btn_Recuperar;
     Dialog dialog;
 
-    private static final String SHARED_PREF = "mi_pref";
-    private static final String KEY_PASSWORD = "password";
+    private static final String SHARED_PREF = MasterPasswordStore.SHARED_PREF;
 
     private BiometricPrompt biometricPrompt;
     private BiometricPrompt.PromptInfo promptInfo;
@@ -89,12 +89,9 @@ public class Logeo_usuario extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String S_password = EtPasswordU.getText().toString().trim();
-                SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREF, Context.MODE_PRIVATE);
-                String password_SP = sharedPreferences.getString(KEY_PASSWORD, null);
-
                 if (S_password.isEmpty()) {
                     Toast.makeText(Logeo_usuario.this, "Campo es obligatorio", Toast.LENGTH_SHORT).show();
-                } else if (!S_password.equals(password_SP)) {
+                } else if (!MasterPasswordStore.verify(sharedPreferences, S_password)) {
                     handleFailedAttempt();
                 } else {
                     loginSuccess();

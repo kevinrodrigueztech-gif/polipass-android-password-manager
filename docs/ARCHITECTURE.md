@@ -30,7 +30,9 @@ This protects the password field at rest from simple SQLite inspection, but it d
 
 ## Authentication boundary
 
-`Logeo_usuario` performs master-password comparison and invokes `BiometricPrompt`. In V1, the master password is retrieved from `SharedPreferences`, which is the primary authentication/security debt to address in V2.
+`Logeo_usuario` delegates master-password verification to `MasterPasswordStore` and invokes `BiometricPrompt`. The master password itself is never persisted. `MasterPasswordStore` stores a PBKDF2-HMAC-SHA256 verifier, a random salt, and the iteration count.
+
+For existing V1 installations, the store can migrate the legacy plaintext `password` value after a successful login and then removes the legacy keys.
 
 ## Autofill boundary
 
@@ -45,3 +47,10 @@ A useful code-review sequence is:
 3. `Logeo_usuario.java` — authentication and recovery behavior
 4. `F_Ajustes.java` — security settings and export/import behavior
 5. `PasswordAutofillService.java` — framework integration status
+
+
+## Verificación de la contraseña maestra
+
+El flujo de autenticación usa `MasterPasswordStore` y `MasterPasswordHasher`. El almacenamiento contiene `master_password_hash`, `master_password_salt` y `master_password_iterations`; la contraseña maestra original no se persiste.
+
+Para instalaciones heredadas de V1, el repositorio conserva una ruta de migración de una sola vez: valida el valor `password`, genera el nuevo verificador y elimina `password` y `c_password`.

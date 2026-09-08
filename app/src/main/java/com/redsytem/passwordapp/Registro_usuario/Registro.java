@@ -15,6 +15,7 @@ import android.widget.Toast;
 import com.redsytem.passwordapp.Login_usuario.Logeo_usuario;
 import com.redsytem.passwordapp.MainActivity;
 import com.redsytem.passwordapp.R;
+import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
 
 public class Registro extends AppCompatActivity {
 
@@ -23,9 +24,7 @@ public class Registro extends AppCompatActivity {
 
     SharedPreferences sharedPreferences;
 
-    private static final String SHARED_PREF = "mi_pref";
-    private static final String KEY_PASSWORD = "password";
-    private static final String KEY_C_PASSWORD = "c_password";
+    private static final String SHARED_PREF = MasterPasswordStore.SHARED_PREF;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,11 +54,8 @@ public class Registro extends AppCompatActivity {
                     Toast.makeText(Registro.this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
                 }
                 else {
-                    //Pasamos los datos introducidos en los edittext al SP
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putString(KEY_PASSWORD, S_password);
-                    editor.putString(KEY_C_PASSWORD, S_C_password);
-                    editor.apply();
+                    // Guardamos un verificador derivado de la contraseña, nunca la contraseña en texto plano.
+                    MasterPasswordStore.save(sharedPreferences, S_password);
                     Toast.makeText(Registro.this, "Contraseña guardada exitosamente", Toast.LENGTH_SHORT).show();
 
                     Intent intent = new Intent(Registro.this, MainActivity.class);
@@ -79,10 +75,10 @@ public class Registro extends AppCompatActivity {
     }
 
     private void VerificarPasswordMaestra(){
-        String mipassword = sharedPreferences.getString(KEY_PASSWORD, null);
+        boolean passwordConfigured = MasterPasswordStore.isConfigured(sharedPreferences);
 
         //Si el usuario ya tiene una contraseña maestra registrada
-        if (mipassword!=null){
+        if (passwordConfigured){
             Intent intent = new Intent(Registro.this, Logeo_usuario.class);
             startActivity(intent);
             finish();

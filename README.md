@@ -139,3 +139,13 @@ No open-source license has been assigned to this repository yet. Add a license t
 
 - Neyra García Keila Yael
 - Rodríguez García Kevin Fernando
+
+## Seguridad
+
+La contraseña maestra no se almacena en texto plano. Se guarda un verificador derivado mediante **PBKDF2-HMAC-SHA256**, con salt aleatorio de 16 bytes y 600,000 iteraciones. La contraseña original no puede recuperarse desde el verificador.
+
+Las instalaciones de V1 que todavía contienen `password` en `SharedPreferences` se migran automáticamente al nuevo formato después del primer inicio de sesión correcto; las claves heredadas se eliminan al finalizar la migración.
+
+La contraseña maestra funciona actualmente como mecanismo de autenticación. La clave AES-GCM usada para cifrar los registros continúa gestionándose mediante Android Keystore, por lo que esta mejora no requiere volver a cifrar los registros existentes.
+
+> **Nota V1:** las respuestas de recuperación siguen siendo una deuda de seguridad independiente. También queda pendiente desacoplar completamente el acceso de recuperación de la autenticación principal.

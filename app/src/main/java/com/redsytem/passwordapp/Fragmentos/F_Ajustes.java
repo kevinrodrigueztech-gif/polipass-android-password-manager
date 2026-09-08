@@ -54,6 +54,7 @@ import java.util.Objects;
 
 
 import com.redsytem.passwordapp.R;
+import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
 
 public class F_Ajustes extends Fragment {
 
@@ -69,9 +70,7 @@ public class F_Ajustes extends Fragment {
 
     String ordenarTituloAsc = Constants.C_TITULO + " ASC";
 
-    private static final String SHARED_PREF = "mi_pref";
-    private static final String KEY_PASSWORD = "password";
-    private static final String KEY_C_PASSWORD = "c_password";
+    private static final String SHARED_PREF = MasterPasswordStore.SHARED_PREF;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -571,18 +570,11 @@ public class F_Ajustes extends Fragment {
     }
 
     private void CuadroDialogoPasswordMaestra() {
-        //Establecer las vistas
-        EditText Password_maestra;
         EditText Et_nuevo_password_maestra, Et_C_nuevo_password_maestra;
         Button Btn_cambiar_password_maestra, Btn_cancelar_password_maestra;
 
-        String password_maestra_recuperada = sharedPreferences.getString(KEY_PASSWORD, null);
-
-        //Hacemos la conexión con el cuadro de diálogo
         dialog_p_m.setContentView(R.layout.cuadro_dialogo_password_maestra);
 
-        //Inicializar las vistas
-        Password_maestra = dialog_p_m.findViewById(R.id.Password_maestra);
         Et_nuevo_password_maestra = dialog_p_m.findViewById(R.id.Et_nuevo_password_maestra);
         Et_C_nuevo_password_maestra = dialog_p_m.findViewById(R.id.Et_C_nuevo_password_maestra);
         Btn_cambiar_password_maestra = dialog_p_m.findViewById(R.id.Btn_cambiar_password_maestra);
@@ -591,35 +583,25 @@ public class F_Ajustes extends Fragment {
         Btn_cambiar_password_maestra.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Obtener los datos de los edittext
                 String S_nuevo_password = Et_nuevo_password_maestra.getText().toString().trim();
                 String S_c_nuevo_password = Et_C_nuevo_password_maestra.getText().toString().trim();
 
-                /*Validación de datos*/
-                if (S_nuevo_password.equals("")){
+                if (S_nuevo_password.equals("")) {
                     Toast.makeText(getActivity(), "Ingrese nueva contraseña", Toast.LENGTH_SHORT).show();
-                }
-                else if (S_c_nuevo_password.equals("")){
+                } else if (S_c_nuevo_password.equals("")) {
                     Toast.makeText(getActivity(), "Confirme nueva contraseña", Toast.LENGTH_SHORT).show();
-                }
-                else if (S_nuevo_password.length()<6){
+                } else if (S_nuevo_password.length() < 6) {
                     Toast.makeText(getActivity(), "La contraseña debe tener más de 6 caracteres", Toast.LENGTH_SHORT).show();
-                }
-                else if (!S_nuevo_password.equals(S_c_nuevo_password)){
+                } else if (!S_nuevo_password.equals(S_c_nuevo_password)) {
                     Toast.makeText(getActivity(), "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
-                }else {
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    /*Pasar los nuevos datos a las llaves*/
-                    editor.putString(KEY_PASSWORD, S_nuevo_password);
-                    editor.putString(KEY_C_PASSWORD, S_c_nuevo_password);
-                    editor.apply();
-                    /*Salir de la aplicación, para iniciar sesión con la nueva contraseña*/
+                } else {
+                    // Reemplazamos el verificador; la contraseña anterior nunca se recupera ni se muestra.
+                    MasterPasswordStore.save(sharedPreferences, S_nuevo_password);
                     startActivity(new Intent(getActivity(), Logeo_usuario.class));
                     getActivity().finish();
                     Toast.makeText(getActivity(), "La contraseña maestra se ha cambiado", Toast.LENGTH_SHORT).show();
                     dialog_p_m.dismiss();
                 }
-
             }
         });
 
@@ -630,11 +612,6 @@ public class F_Ajustes extends Fragment {
                 dialog_p_m.dismiss();
             }
         });
-
-        Password_maestra.setText(password_maestra_recuperada);
-        Password_maestra.setEnabled(false);
-        Password_maestra.setBackgroundColor(Color.TRANSPARENT);
-        Password_maestra.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
         dialog_p_m.show();
         dialog_p_m.setCancelable(false);
