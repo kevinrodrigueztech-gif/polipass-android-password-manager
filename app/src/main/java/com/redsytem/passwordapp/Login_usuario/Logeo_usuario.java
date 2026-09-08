@@ -34,6 +34,7 @@ import com.redsytem.passwordapp.MainActivity;
 import com.redsytem.passwordapp.R;
 import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
 import com.redsytem.passwordapp.Seguridad.RecoveryAnswerStore;
+import com.redsytem.passwordapp.Seguridad.SecurityTaskRunner;
 
 public class Logeo_usuario extends AppCompatActivity {
 
@@ -94,11 +95,24 @@ public class Logeo_usuario extends AppCompatActivity {
                 String S_password = EtPasswordU.getText().toString().trim();
                 if (S_password.isEmpty()) {
                     Toast.makeText(Logeo_usuario.this, "Campo es obligatorio", Toast.LENGTH_SHORT).show();
-                } else if (!MasterPasswordStore.verify(sharedPreferences, S_password)) {
-                    handleFailedAttempt();
-                } else {
-                    loginSuccess();
+                    return;
                 }
+
+                BtnIngresar.setEnabled(false);
+                BtnIngresar.setText("Verificando...");
+
+                SecurityTaskRunner.execute(() -> {
+                    boolean valid = MasterPasswordStore.verify(sharedPreferences, S_password);
+                    runOnUiThread(() -> {
+                        BtnIngresar.setEnabled(true);
+                        BtnIngresar.setText("Ingresar");
+                        if (valid) {
+                            loginSuccess();
+                        } else {
+                            handleFailedAttempt();
+                        }
+                    });
+                });
             }
         });
 
@@ -194,37 +208,49 @@ public class Logeo_usuario extends AppCompatActivity {
             Et_Respuesta_Tres.setVisibility(View.VISIBLE);
         }
 
-        builder.setPositiveButton("Verificar", (dialog, which) -> {
-            boolean respuestasCorrectas;
-            String respuestaUno = Et_Respuesta_Uno.getText().toString();
-            String respuestaDos = Et_Respuesta_Dos.getText().toString();
-            String respuestaTres = Et_Respuesta_Tres.getText().toString();
-
-            if (seleccionadoUno) {
-                respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno);
-            } else if (seleccionadoDos) {
-                respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno)
-                        && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 1, respuestaDos);
-            } else if (seleccionadoTres) {
-                respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno)
-                        && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 1, respuestaDos)
-                        && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 2, respuestaTres);
-            } else {
-                respuestasCorrectas = false;
-            }
-
-            if (respuestasCorrectas) {
-                showRecoveryPasswordResetDialog();
-            } else {
-                Toast.makeText(Logeo_usuario.this,
-                        "Respuestas incorrectas, intenta de nuevo", Toast.LENGTH_SHORT).show();
-            }
-        });
+        builder.setPositiveButton("Verificar", null);
 
         builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
 
         AlertDialog alertDialog = builder.create();
         alertDialog.show();
+        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String respuestaUno = Et_Respuesta_Uno.getText().toString();
+            String respuestaDos = Et_Respuesta_Dos.getText().toString();
+            String respuestaTres = Et_Respuesta_Tres.getText().toString();
+
+            v.setEnabled(false);
+            ((Button) v).setText("Verificando...");
+
+            SecurityTaskRunner.execute(() -> {
+                boolean respuestasCorrectas;
+                if (seleccionadoUno) {
+                    respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno);
+                } else if (seleccionadoDos) {
+                    respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno)
+                            && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 1, respuestaDos);
+                } else if (seleccionadoTres) {
+                    respuestasCorrectas = RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 0, respuestaUno)
+                            && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 1, respuestaDos)
+                            && RecoveryAnswerStore.verifyAnswer(recoveryPreferences, 2, respuestaTres);
+                } else {
+                    respuestasCorrectas = false;
+                }
+
+                runOnUiThread(() -> {
+                    if (isFinishing()) return;
+                    if (respuestasCorrectas) {
+                        alertDialog.dismiss();
+                        showRecoveryPasswordResetDialog();
+                    } else {
+                        v.setEnabled(true);
+                        ((Button) v).setText("Verificar");
+                        Toast.makeText(Logeo_usuario.this,
+                                "Respuestas incorrectas, intenta de nuevo", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            });
+        });
     }
 
     /**
@@ -262,11 +288,18 @@ public class Logeo_usuario extends AppCompatActivity {
             } else if (!password.equals(confirmation)) {
                 Toast.makeText(Logeo_usuario.this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
             } else {
-                MasterPasswordStore.save(sharedPreferences, password);
-                resetDialog.dismiss();
-                Toast.makeText(Logeo_usuario.this,
-                        "Contraseña maestra restablecida correctamente", Toast.LENGTH_SHORT).show();
-                loginSuccess();
+                changeButton.setEnabled(false);
+                changeButton.setText("Guardando...");
+                SecurityTaskRunner.execute(() -> {
+                    MasterPasswordStore.save(sharedPreferences, password);
+                    runOnUiThread(() -> {
+                        if (isFinishing()) return;
+                        resetDialog.dismiss();
+                        Toast.makeText(Logeo_usuario.this,
+                                "Contraseña maestra restablecida correctamente", Toast.LENGTH_SHORT).show();
+                        loginSuccess();
+                    });
+                });
             }
         });
 

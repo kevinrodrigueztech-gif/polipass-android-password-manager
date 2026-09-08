@@ -56,6 +56,7 @@ import java.util.Objects;
 import com.redsytem.passwordapp.R;
 import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
 import com.redsytem.passwordapp.Seguridad.RecoveryAnswerStore;
+import com.redsytem.passwordapp.Seguridad.SecurityTaskRunner;
 
 public class F_Ajustes extends Fragment {
 
@@ -317,7 +318,20 @@ public class F_Ajustes extends Fragment {
             }
         });
 
-        builder.setPositiveButton("Guardar", (dialog, which) -> {
+        builder.setPositiveButton("Guardar", null);
+
+        builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        Button saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        saveButton.setOnClickListener(v -> {
             String inputPU = EtPreguntaUno.getText().toString().trim();
             String inputRU = EtRespuestaUno.getText().toString().trim();
             String inputPD = EtPreguntaDos.getText().toString().trim();
@@ -326,25 +340,26 @@ public class F_Ajustes extends Fragment {
             String inputRT = EtRespuestaTres.getText().toString().trim();
 
             boolean enabled = HabPregSecure.isChecked();
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putBoolean("question_enabled", enabled);
-
             if (!enabled) {
                 RecoveryAnswerStore.clearAnswer(sharedPreferences, 0);
                 RecoveryAnswerStore.clearAnswer(sharedPreferences, 1);
                 RecoveryAnswerStore.clearAnswer(sharedPreferences, 2);
-                editor.putBoolean("seleccionadoUno", false)
+                sharedPreferences.edit()
+                        .putBoolean("question_enabled", false)
+                        .putBoolean("seleccionadoUno", false)
                         .putBoolean("seleccionadoDos", false)
                         .putBoolean("seleccionadoTres", false)
                         .apply();
                 Toast.makeText(getActivity(), "Recuperación deshabilitada", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
                 return;
             }
 
-            int selectedCount = 0;
+            final int selectedCount;
             if (pregunta_uno.isChecked()) selectedCount = 1;
             else if (pregunta_dos.isChecked()) selectedCount = 2;
             else if (pregunta_tres.isChecked()) selectedCount = 3;
+            else selectedCount = 0;
 
             if (selectedCount == 0) {
                 Toast.makeText(getActivity(), "Selecciona al menos una pregunta", Toast.LENGTH_SHORT).show();
@@ -356,38 +371,43 @@ public class F_Ajustes extends Fragment {
                 return;
             }
 
-            editor.putString("PreguntaUno", inputPU)
-                    .putString("PreguntaDos", inputPD)
-                    .putString("PreguntaTres", inputPT)
-                    .putBoolean("seleccionadoUno", selectedCount == 1)
-                    .putBoolean("seleccionadoDos", selectedCount == 2)
-                    .putBoolean("seleccionadoTres", selectedCount == 3)
-                    .apply();
+            saveButton.setEnabled(false);
+            saveButton.setText("Guardando...");
 
-            RecoveryAnswerStore.saveAnswer(sharedPreferences, 0, inputRU);
-            if (selectedCount >= 2) {
-                RecoveryAnswerStore.saveAnswer(sharedPreferences, 1, inputRD);
-            } else {
-                RecoveryAnswerStore.clearAnswer(sharedPreferences, 1);
-            }
-            if (selectedCount == 3) {
-                RecoveryAnswerStore.saveAnswer(sharedPreferences, 2, inputRT);
-            } else {
-                RecoveryAnswerStore.clearAnswer(sharedPreferences, 2);
-            }
+            SecurityTaskRunner.execute(() -> {
+                try {
+                    sharedPreferences.edit()
+                            .putBoolean("question_enabled", true)
+                            .putString("PreguntaUno", inputPU)
+                            .putString("PreguntaDos", inputPD)
+                            .putString("PreguntaTres", inputPT)
+                            .putBoolean("seleccionadoUno", selectedCount == 1)
+                            .putBoolean("seleccionadoDos", selectedCount == 2)
+                            .putBoolean("seleccionadoTres", selectedCount == 3)
+                            .apply();
 
-            Toast.makeText(getActivity(), "Preguntas de recuperación guardadas de forma segura", Toast.LENGTH_SHORT).show();
+                    RecoveryAnswerStore.saveAnswer(sharedPreferences, 0, inputRU);
+                    if (selectedCount >= 2) RecoveryAnswerStore.saveAnswer(sharedPreferences, 1, inputRD);
+                    else RecoveryAnswerStore.clearAnswer(sharedPreferences, 1);
+                    if (selectedCount == 3) RecoveryAnswerStore.saveAnswer(sharedPreferences, 2, inputRT);
+                    else RecoveryAnswerStore.clearAnswer(sharedPreferences, 2);
+
+                    if (!isAdded()) return;
+                    requireActivity().runOnUiThread(() -> {
+                        if (!isAdded()) return;
+                        dialog.dismiss();
+                        Toast.makeText(requireContext(), "Preguntas de recuperación guardadas de forma segura", Toast.LENGTH_SHORT).show();
+                    });
+                } catch (RuntimeException e) {
+                    if (!isAdded()) return;
+                    requireActivity().runOnUiThread(() -> {
+                        saveButton.setEnabled(true);
+                        saveButton.setText("Guardar");
+                        Toast.makeText(requireContext(), "No se pudieron guardar las respuestas de recuperación", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
         });
-
-        builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
     }
 
     private void updateVisibility(boolean uno, boolean dos, boolean tres, EditText etPreguntaUno, EditText etRespuestaUno, EditText etPreguntaDos, EditText etRespuestaDos, EditText etPreguntaTres, EditText etRespuestaTres) {
@@ -599,12 +619,28 @@ public class F_Ajustes extends Fragment {
                 } else if (!S_nuevo_password.equals(S_c_nuevo_password)) {
                     Toast.makeText(getActivity(), "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
                 } else {
-                    // Reemplazamos el verificador; la contraseña anterior nunca se recupera ni se muestra.
-                    MasterPasswordStore.save(sharedPreferences, S_nuevo_password);
-                    startActivity(new Intent(getActivity(), Logeo_usuario.class));
-                    getActivity().finish();
-                    Toast.makeText(getActivity(), "La contraseña maestra se ha cambiado", Toast.LENGTH_SHORT).show();
-                    dialog_p_m.dismiss();
+                    Btn_cambiar_password_maestra.setEnabled(false);
+                    Btn_cambiar_password_maestra.setText("Guardando...");
+                    SecurityTaskRunner.execute(() -> {
+                        try {
+                            MasterPasswordStore.save(sharedPreferences, S_nuevo_password);
+                            if (!isAdded()) return;
+                            requireActivity().runOnUiThread(() -> {
+                                if (!isAdded()) return;
+                                startActivity(new Intent(requireContext(), Logeo_usuario.class));
+                                requireActivity().finish();
+                                Toast.makeText(requireContext(), "La contraseña maestra se ha cambiado", Toast.LENGTH_SHORT).show();
+                                dialog_p_m.dismiss();
+                            });
+                        } catch (RuntimeException e) {
+                            if (!isAdded()) return;
+                            requireActivity().runOnUiThread(() -> {
+                                Btn_cambiar_password_maestra.setEnabled(true);
+                                Btn_cambiar_password_maestra.setText("Cambiar");
+                                Toast.makeText(requireContext(), "No se pudo guardar la contraseña", Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
                 }
             }
         });

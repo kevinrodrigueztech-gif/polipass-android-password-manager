@@ -1,6 +1,5 @@
 package com.redsytem.passwordapp.BaseDeDatos;
 
-import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -14,10 +13,15 @@ import androidx.annotation.Nullable;
 import com.redsytem.passwordapp.Encriptacion.Encrypt;
 import com.redsytem.passwordapp.Modelo.Password;
 
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Locale;
 
 public class BDHelper extends SQLiteOpenHelper {
+
     public BDHelper(@Nullable Context context) {
         super(context, Constants.BD_NAME, null, Constants.BD_VERSION);
     }
@@ -29,215 +33,253 @@ public class BDHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + Constants.TABLE_NAME);
-        onCreate(db);
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE " + Constants.TABLE_NAME + " ADD COLUMN "
+                    + Constants.C_REGISTRO_CIFRADO + " TEXT");
+
+            migrateLegacyRecords(db);
+        }
     }
 
-    public long insertarRegistro (String titulo, String cuenta, String nombre_usuario, String password, String sitio_web,
-                                  String nota, String T_registro, String T_Actualizacion) throws Exception {
+    private void migrateLegacyRecords(SQLiteDatabase db) {
+        Cursor cursor = db.rawQuery("SELECT * FROM " + Constants.TABLE_NAME, null);
+        try {
+            int idIndex = cursor.getColumnIndexOrThrow(Constants.C_ID);
+            int tituloIndex = cursor.getColumnIndexOrThrow(Constants.C_TITULO);
+            int cuentaIndex = cursor.getColumnIndexOrThrow(Constants.C_CUENTA);
+            int usuarioIndex = cursor.getColumnIndexOrThrow(Constants.C_NOMBRE_USUARIO);
+            int passwordIndex = cursor.getColumnIndexOrThrow(Constants.C_PASSWORD);
+            int sitioIndex = cursor.getColumnIndexOrThrow(Constants.C_SITIO_WEB);
+            int notaIndex = cursor.getColumnIndexOrThrow(Constants.C_NOTA);
+            int blobIndex = cursor.getColumnIndexOrThrow(Constants.C_REGISTRO_CIFRADO);
 
-        SQLiteDatabase db = this.getWritableDatabase();
+            while (cursor.moveToNext()) {
+                String encryptedPassword = cursor.getString(passwordIndex);
+                String password = encryptedPassword == null ? "" : Encrypt.encrypt(encryptedPassword, false);
 
-        ContentValues values = new ContentValues();
+                String blob = construirRegistroCifrado(
+                        cursor.getString(tituloIndex),
+                        cursor.getString(cuentaIndex),
+                        cursor.getString(usuarioIndex),
+                        password,
+                        cursor.getString(sitioIndex),
+                        cursor.getString(notaIndex));
 
-        /*Insertamos los datos*/
-        values.put(Constants.C_TITULO, titulo);
-        values.put(Constants.C_CUENTA, cuenta);
-        values.put(Constants.C_NOMBRE_USUARIO, nombre_usuario);
-        String encryptedPassword = Encrypt.encrypt( password, true);
-        values.put(Constants.C_PASSWORD, encryptedPassword);
-        values.put(Constants.C_SITIO_WEB, sitio_web);
-        values.put(Constants.C_NOTA, nota);
-        values.put(Constants.C_TIEMPO_REGISTRO, T_registro);
-        values.put(Constants.C_TIEMPO_ACTUALIZACION, T_Actualizacion);
-
-        /*Insertar la fila*/
-        long id = db.insert(Constants.TABLE_NAME, null, values);
-
-        /*Cerrar conexión de la base de datos*/
-        db.close();
-
-        return id;
-
-
+                ContentValues values = new ContentValues();
+                values.put(Constants.C_REGISTRO_CIFRADO, blob);
+                values.putNull(Constants.C_TITULO);
+                values.putNull(Constants.C_CUENTA);
+                values.putNull(Constants.C_NOMBRE_USUARIO);
+                values.putNull(Constants.C_PASSWORD);
+                values.putNull(Constants.C_SITIO_WEB);
+                values.putNull(Constants.C_NOTA);
+                db.update(Constants.TABLE_NAME, values,
+                        Constants.C_ID + " = ?", new String[]{cursor.getString(idIndex)});
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("No fue posible migrar la bóveda cifrada", e);
+        } finally {
+            cursor.close();
+        }
     }
 
-    public void actualizarRegistro (String id, String titulo, String cuenta, String nombre_usuario, String password, String sitio_web,
-                                  String nota, String T_registro, String T_Actualizacion) throws Exception {
+    public long insertarRegistro(String titulo, String cuenta, String nombre_usuario, String password,
+                                 String sitio_web, String nota, String t_registro,
+                                 String t_actualizacion) throws Exception {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(Constants.C_REGISTRO_CIFRADO,
+                    construirRegistroCifrado(titulo, cuenta, nombre_usuario, password, sitio_web, nota));
+            values.put(Constants.C_TIEMPO_REGISTRO, t_registro);
+            values.put(Constants.C_TIEMPO_ACTUALIZACION, t_actualizacion);
+            return db.insertOrThrow(Constants.TABLE_NAME, null, values);
+        } finally {
+            db.close();
+        }
+    }
 
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-
-        /*Insertamos los datos*/
-        values.put(Constants.C_TITULO, titulo);
-        values.put(Constants.C_CUENTA, cuenta);
-        values.put(Constants.C_NOMBRE_USUARIO, nombre_usuario);
-        String encryptedPassword = Encrypt.encrypt( password, true);
-        values.put(Constants.C_PASSWORD, encryptedPassword);
-        values.put(Constants.C_SITIO_WEB, sitio_web);
-        values.put(Constants.C_NOTA, nota);
-        values.put(Constants.C_TIEMPO_REGISTRO, T_registro);
-        values.put(Constants.C_TIEMPO_ACTUALIZACION, T_Actualizacion);
-
-        /*actualizar la fila*/
-        db.update(Constants.TABLE_NAME, values, Constants.C_ID + " =? ", new String[]{id});
-
-        /*Cerrar conexión de la base de datos*/
-        db.close();
-
+    public void actualizarRegistro(String id, String titulo, String cuenta, String nombre_usuario,
+                                   String password, String sitio_web, String nota,
+                                   String t_registro, String t_actualizacion) throws Exception {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(Constants.C_REGISTRO_CIFRADO,
+                    construirRegistroCifrado(titulo, cuenta, nombre_usuario, password, sitio_web, nota));
+            values.put(Constants.C_TIEMPO_REGISTRO, t_registro);
+            values.put(Constants.C_TIEMPO_ACTUALIZACION, t_actualizacion);
+            db.update(Constants.TABLE_NAME, values,
+                    Constants.C_ID + " = ?", new String[]{id});
+        } finally {
+            db.close();
+        }
     }
 
     public ArrayList<Password> ObtenerTodosRegistros(String orderby) throws Exception {
-        ArrayList<Password> passwordList = new ArrayList<>();
-        //Consulta para seleccionar el registro
-        String selectQuery = "SELECT * FROM " + Constants.TABLE_NAME + " ORDER BY " + orderby;
-
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, null);
-
-        if (cursor.moveToFirst()){
-            do {
-                @SuppressLint("Range") String decryptedPassword = Encrypt.encrypt( cursor.getString(cursor.getColumnIndex(Constants.C_PASSWORD)), false);
-                @SuppressLint("Range") Password modelo_password = new Password(
-                        ""+cursor.getInt(cursor.getColumnIndex(Constants.C_ID)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_TITULO)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_CUENTA)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_NOMBRE_USUARIO)),
-                        ""+decryptedPassword,
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_SITIO_WEB)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_NOTA)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_TIEMPO_REGISTRO)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_TIEMPO_ACTUALIZACION)));
-
-                passwordList.add(modelo_password);
-
-            }while (cursor.moveToNext());
-        }
-
-        db.close();
-
+        ArrayList<Password> passwordList = cargarTodosRegistros();
+        ordenarRegistros(passwordList, orderby);
         return passwordList;
     }
 
     public ArrayList<Password> BuscarRegistros(String consulta) throws Exception {
-        ArrayList<Password> passwordList = new ArrayList<>();
-        //Consulta para seleccionar el registro
-        String selectQuery = "SELECT * FROM " + Constants.TABLE_NAME + " WHERE " + Constants.C_TITULO + " LIKE '%" + consulta + "%'";
+        String normalizedQuery = consulta == null ? "" : consulta.trim().toLowerCase(Locale.ROOT);
+        ArrayList<Password> all = cargarTodosRegistros();
+        ArrayList<Password> result = new ArrayList<>();
 
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, null);
-
-        if (cursor.moveToFirst()){
-            do {
-                @SuppressLint("Range") String decryptedPassword = Encrypt.encrypt( cursor.getString(cursor.getColumnIndex(Constants.C_PASSWORD)), false);
-                @SuppressLint("Range") Password modelo_password = new Password(
-                        ""+cursor.getInt(cursor.getColumnIndex(Constants.C_ID)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_TITULO)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_CUENTA)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_NOMBRE_USUARIO)),
-                        ""+decryptedPassword,
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_SITIO_WEB)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_NOTA)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_TIEMPO_REGISTRO)),
-                        ""+cursor.getString(cursor.getColumnIndex(Constants.C_TIEMPO_ACTUALIZACION)));
-
-                passwordList.add(modelo_password);
-
-            }while (cursor.moveToNext());
+        for (Password registro : all) {
+            if (registro.getTitulo() != null
+                    && registro.getTitulo().toLowerCase(Locale.ROOT).contains(normalizedQuery)) {
+                result.add(registro);
+            }
         }
-
-        db.close();
-
-        return passwordList;
+        return result;
     }
 
     public ArrayList<Password> BuscarRegistrosPorSitioWeb(String sitioWeb) throws Exception {
-        ArrayList<Password> passwordList = new ArrayList<>();
-        // Consulta para seleccionar registros por sitio web
-        String selectQuery = "SELECT * FROM " + Constants.TABLE_NAME + " WHERE " + Constants.C_SITIO_WEB + " = ?";
+        String normalizedSite = sitioWeb == null ? "" : sitioWeb.trim();
+        ArrayList<Password> all = cargarTodosRegistros();
+        ArrayList<Password> result = new ArrayList<>();
 
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, new String[]{sitioWeb});
-
-        if (cursor.moveToFirst()) {
-            do {
-                @SuppressLint("Range") String decryptedPassword = Encrypt.encrypt(cursor.getString(cursor.getColumnIndex(Constants.C_PASSWORD)), false);
-                @SuppressLint("Range") Password modelo_password = new Password(
-                        "" + cursor.getInt(cursor.getColumnIndex(Constants.C_ID)),
-                        "" + cursor.getString(cursor.getColumnIndex(Constants.C_TITULO)),
-                        "" + cursor.getString(cursor.getColumnIndex(Constants.C_CUENTA)),
-                        "" + cursor.getString(cursor.getColumnIndex(Constants.C_NOMBRE_USUARIO)),
-                        "" + decryptedPassword,
-                        "" + cursor.getString(cursor.getColumnIndex(Constants.C_SITIO_WEB)),
-                        "" + cursor.getString(cursor.getColumnIndex(Constants.C_NOTA)),
-                        "" + cursor.getString(cursor.getColumnIndex(Constants.C_TIEMPO_REGISTRO)),
-                        "" + cursor.getString(cursor.getColumnIndex(Constants.C_TIEMPO_ACTUALIZACION)));
-
-                passwordList.add(modelo_password);
-
-            } while (cursor.moveToNext());
+        for (Password registro : all) {
+            if (normalizedSite.equalsIgnoreCase(registro.getSitio_web())) {
+                result.add(registro);
+            }
         }
-
-        cursor.close();
-        db.close();
-
-        return passwordList;
+        return result;
     }
 
     public Pair<String, String> BuscarNombreUsuarioYContraseñaPorSitioWeb(String sitioWeb) throws Exception {
-        String nombreUsuario = null;
-        String contraseña = null;
+        ArrayList<Password> registros = BuscarRegistrosPorSitioWeb(sitioWeb);
+        if (registros.isEmpty()) {
+            return Pair.create(null, null);
+        }
+        Password registro = registros.get(0);
+        return Pair.create(registro.getNombre_usuario(), registro.getPassword());
+    }
 
-        // Consulta para seleccionar registros por sitio web
-        String selectQuery = "SELECT * FROM " + Constants.TABLE_NAME + " WHERE " + Constants.C_SITIO_WEB + " = ?";
-
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, new String[]{sitioWeb});
-
+    public Password ObtenerRegistroPorId(String id) throws Exception {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(Constants.TABLE_NAME, null,
+                Constants.C_ID + " = ?", new String[]{id}, null, null, null);
         try {
-            if (cursor.moveToFirst()) {
-                // Verificar si las columnas existen antes de acceder a sus índices
-                int columnIndexUsuario = cursor.getColumnIndex(Constants.C_NOMBRE_USUARIO);
-                int columnIndexContraseña = cursor.getColumnIndex(Constants.C_PASSWORD);
+            if (!cursor.moveToFirst()) {
+                return null;
+            }
+            return convertirCursorARegistro(cursor);
+        } finally {
+            cursor.close();
+            db.close();
+        }
+    }
 
-                if (columnIndexUsuario != -1 && columnIndexContraseña != -1) {
-                    // Obtener el nombre de usuario y la contraseña
-                    nombreUsuario = cursor.getString(columnIndexUsuario);
-                    String encryptedPassword = cursor.getString(columnIndexContraseña);
-
-                    // Desencriptar la contraseña si es necesario
-
-                    contraseña = Encrypt.encrypt(encryptedPassword, false);
-                }
+    private ArrayList<Password> cargarTodosRegistros() throws Exception {
+        ArrayList<Password> records = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM " + Constants.TABLE_NAME, null);
+        try {
+            while (cursor.moveToNext()) {
+                records.add(convertirCursorARegistro(cursor));
             }
         } finally {
             cursor.close();
             db.close();
         }
-
-        return Pair.create(nombreUsuario, contraseña);
+        return records;
     }
 
+    private Password convertirCursorARegistro(Cursor cursor) throws Exception {
+        int idIndex = cursor.getColumnIndexOrThrow(Constants.C_ID);
+        int registroCifradoIndex = cursor.getColumnIndexOrThrow(Constants.C_REGISTRO_CIFRADO);
+        int tiempoRegistroIndex = cursor.getColumnIndexOrThrow(Constants.C_TIEMPO_REGISTRO);
+        int tiempoActualizacionIndex = cursor.getColumnIndexOrThrow(Constants.C_TIEMPO_ACTUALIZACION);
 
+        String blob = cursor.getString(registroCifradoIndex);
+        if (blob == null || blob.isEmpty()) {
+            return convertirLegacyCursor(cursor);
+        }
 
-
-    public int ObtenerNumeroRegistros(){
-        String countquery = "SELECT * FROM " + Constants.TABLE_NAME;
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(countquery, null);
-
-        int contador = cursor.getCount();
-
-        cursor.close();
-
-        return contador;
+        JSONObject payload = new JSONObject(Encrypt.decryptRecord(blob));
+        return new Password(
+                String.valueOf(cursor.getInt(idIndex)),
+                payload.optString("titulo", ""),
+                payload.optString("cuenta", ""),
+                payload.optString("nombre_usuario", ""),
+                payload.optString("password", ""),
+                payload.optString("sitio_web", ""),
+                payload.optString("nota", ""),
+                cursor.getString(tiempoRegistroIndex),
+                cursor.getString(tiempoActualizacionIndex));
     }
 
-    public void EliminarRegistro(String id){
+    private Password convertirLegacyCursor(Cursor cursor) throws Exception {
+        String password = cursor.getString(cursor.getColumnIndexOrThrow(Constants.C_PASSWORD));
+        if (password != null && !password.isEmpty()) {
+            password = Encrypt.encrypt(password, false);
+        } else {
+            password = "";
+        }
+
+        return new Password(
+                String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(Constants.C_ID))),
+                safe(cursor.getString(cursor.getColumnIndexOrThrow(Constants.C_TITULO))),
+                safe(cursor.getString(cursor.getColumnIndexOrThrow(Constants.C_CUENTA))),
+                safe(cursor.getString(cursor.getColumnIndexOrThrow(Constants.C_NOMBRE_USUARIO))),
+                password,
+                safe(cursor.getString(cursor.getColumnIndexOrThrow(Constants.C_SITIO_WEB))),
+                safe(cursor.getString(cursor.getColumnIndexOrThrow(Constants.C_NOTA))),
+                safe(cursor.getString(cursor.getColumnIndexOrThrow(Constants.C_TIEMPO_REGISTRO))),
+                safe(cursor.getString(cursor.getColumnIndexOrThrow(Constants.C_TIEMPO_ACTUALIZACION))));
+    }
+
+    private static String safe(String value) {
+        return value == null ? "" : value;
+    }
+
+    private static String construirRegistroCifrado(String titulo, String cuenta, String nombreUsuario,
+                                                    String password, String sitioWeb, String nota) throws Exception {
+        JSONObject payload = new JSONObject();
+        payload.put("version", 1);
+        payload.put("titulo", safe(titulo));
+        payload.put("cuenta", safe(cuenta));
+        payload.put("nombre_usuario", safe(nombreUsuario));
+        payload.put("password", safe(password));
+        payload.put("sitio_web", safe(sitioWeb));
+        payload.put("nota", safe(nota));
+        return Encrypt.encryptRecord(payload.toString());
+    }
+
+    private static void ordenarRegistros(ArrayList<Password> records, String orderby) {
+        boolean descending = orderby != null && orderby.toLowerCase(Locale.ROOT).contains("desc");
+        Collections.sort(records, new Comparator<Password>() {
+            @Override
+            public int compare(Password left, Password right) {
+                String a = safe(left.getTitulo());
+                String b = safe(right.getTitulo());
+                int result = a.compareToIgnoreCase(b);
+                return descending ? -result : result;
+            }
+        });
+    }
+
+    public int ObtenerNumeroRegistros() {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + Constants.TABLE_NAME, null);
+        try {
+            return cursor.moveToFirst() ? cursor.getInt(0) : 0;
+        } finally {
+            cursor.close();
+            db.close();
+        }
+    }
+
+    public void EliminarRegistro(String id) {
         SQLiteDatabase db = getWritableDatabase();
-        db.delete(Constants.TABLE_NAME, Constants.C_ID+ " = ?", new String[]{id});
-        db.close();
+        try {
+            db.delete(Constants.TABLE_NAME, Constants.C_ID + " = ?", new String[]{id});
+        } finally {
+            db.close();
+        }
     }
 
     public void EliminarTodosRegistros() {
@@ -255,5 +297,4 @@ public class BDHelper extends SQLiteOpenHelper {
             }
         }
     }
-
 }

@@ -151,3 +151,16 @@ La contraseña maestra funciona como mecanismo de autenticación y nunca se alma
 Las respuestas de recuperación tampoco se almacenan en texto plano. Cada respuesta usa un salt independiente y PBKDF2-HMAC-SHA256. Una recuperación exitosa no revela ni reconstruye la contraseña anterior: únicamente autoriza al usuario a establecer una nueva contraseña maestra que genera otro verificador.
 
 Las instalaciones heredadas con respuestas V1 se migran de forma gradual después de una verificación correcta.
+
+## Rendimiento y seguridad
+
+La derivación PBKDF2 usa 600,000 iteraciones de HMAC-SHA256 de forma deliberadamente costosa para dificultar ataques de fuerza bruta. Para evitar que esta protección congele la interfaz, las operaciones de autenticación y generación de verificadores se ejecutan en un hilo de trabajo y la interfaz muestra un estado temporal como “Verificando...” o “Guardando...”. No se reduce el número de iteraciones para obtener velocidad a costa de seguridad.
+
+
+## Seguridad — evolución V4
+
+La bóveda ahora cifra el registro completo con AES-GCM y mantiene la clave fuera de SQLite mediante Android Keystore. La contraseña maestra se almacena únicamente como verificador PBKDF2 con salt independiente, y la recuperación usa verificadores separados.
+
+### Próximo reto de seguridad
+
+Diseñar un flujo de respaldo/restauración de la bóveda que no requiera extraer la clave de Android Keystore en texto plano y revisar la política de exportación/importación para evitar archivos CSV con información sensible fuera del almacenamiento protegido.

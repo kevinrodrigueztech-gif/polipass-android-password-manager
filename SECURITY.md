@@ -48,3 +48,13 @@ V2 should establish a formal threat model and address, at minimum:
 Recovery answers are stored as salted PBKDF2-HMAC-SHA256 verifiers and are compared without storing the original answers. Existing V1 plaintext answers are migrated to the verifier format after a successful recovery attempt.
 
 Recovery is intentionally separate from vault encryption: answering the recovery questions authorizes a master-password reset, but the answers are not used as a key for the encrypted records.
+
+## V4 — cifrado completo de registros
+
+A partir de V4, SQLite no almacena en claro los campos sensibles de cada entrada. Título, cuenta, nombre de usuario, contraseña, sitio web y notas forman un único payload JSON cifrado con AES-256-GCM.
+
+La clave AES vive en Android Keystore y no se persiste dentro de la base de datos. Cada cifrado genera un IV nuevo. El ciphertext incluye el IV y el tag de autenticación de GCM.
+
+La migración desde V3 conserva los registros existentes: descifra la contraseña heredada, reconstruye el registro completo, lo cifra como payload y limpia las columnas heredadas.
+
+La seguridad de la bóveda depende también de la disponibilidad de la clave de Android Keystore. Desinstalar la aplicación o eliminar las claves del dispositivo puede hacer que una bóveda cifrada quede irrecuperable, por lo que el proyecto todavía necesita un mecanismo de respaldo/restauración de la clave de bóveda antes de considerarse listo para producción.

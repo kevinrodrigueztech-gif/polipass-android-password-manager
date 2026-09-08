@@ -62,3 +62,20 @@ Recovery answers are authentication factors, not encryption keys. Their values a
 A successful recovery does not reconstruct the master password. Instead, it proves control of the configured recovery factors and lets the user create a new master-password verifier. The vault encryption key remains the Android Keystore key already used by the existing database encryption layer.
 
 This separation means changing or recovering the master password does not require decrypting and re-encrypting every vault record.
+
+
+## Rendimiento de autenticación
+
+Las operaciones PBKDF2 son deliberadamente costosas. `SecurityTaskRunner` las ejecuta en un `ExecutorService` de fondo para que login, cambio de contraseña, recuperación y registro no bloqueen el hilo principal. La interfaz deshabilita temporalmente la acción mientras se calcula el verificador.
+
+## Cifrado completo de la bóveda (V4)
+
+Los registros de la bóveda ya no almacenan en claro título, cuenta, usuario, contraseña, sitio web ni notas.
+
+Cada registro se serializa como un objeto JSON y se cifra con **AES-256-GCM** usando una clave almacenada en **Android Keystore**. El ciphertext se guarda en `REGISTRO_CIFRADO`; `ID`, `TIEMPO_REGISTRO` y `TIEMPO_ACTUALIZACION` permanecen como metadatos necesarios para la aplicación.
+
+El cifrado de registros utiliza AAD (`PoliPass/vault-record/v1`) para evitar reutilizar el mismo contexto criptográfico con otros datos de la aplicación.
+
+La V4 incorpora una migración desde la versión anterior. Los registros existentes se leen desde las columnas antiguas, se convierten a un único payload cifrado y después se eliminan sus valores en claro. La operación no elimina la tabla ni los registros.
+
+Como los campos sensibles ya no están disponibles para consultas SQL, la búsqueda por título y la coincidencia por sitio web se realizan sobre los registros descifrados en memoria. Para una bóveda local pequeña esta estrategia mantiene la privacidad de los datos almacenados a costa de recorrer los registros durante estas operaciones.

@@ -16,6 +16,7 @@ import com.redsytem.passwordapp.Login_usuario.Logeo_usuario;
 import com.redsytem.passwordapp.MainActivity;
 import com.redsytem.passwordapp.R;
 import com.redsytem.passwordapp.Seguridad.MasterPasswordStore;
+import com.redsytem.passwordapp.Seguridad.SecurityTaskRunner;
 
 public class Registro extends AppCompatActivity {
 
@@ -54,14 +55,25 @@ public class Registro extends AppCompatActivity {
                     Toast.makeText(Registro.this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
                 }
                 else {
-                    // Guardamos un verificador derivado de la contraseña, nunca la contraseña en texto plano.
-                    MasterPasswordStore.save(sharedPreferences, S_password);
-                    Toast.makeText(Registro.this, "Contraseña guardada exitosamente", Toast.LENGTH_SHORT).show();
-
-                    Intent intent = new Intent(Registro.this, MainActivity.class);
-                    startActivity(intent);
-                    finish();
-
+                    BtnRegistrar.setEnabled(false);
+                    BtnRegistrar.setText("Guardando...");
+                    SecurityTaskRunner.execute(() -> {
+                        try {
+                            MasterPasswordStore.save(sharedPreferences, S_password);
+                            runOnUiThread(() -> {
+                                Toast.makeText(Registro.this, "Contraseña guardada exitosamente", Toast.LENGTH_SHORT).show();
+                                Intent intent = new Intent(Registro.this, MainActivity.class);
+                                startActivity(intent);
+                                finish();
+                            });
+                        } catch (RuntimeException e) {
+                            runOnUiThread(() -> {
+                                BtnRegistrar.setEnabled(true);
+                                BtnRegistrar.setText("Registrarse");
+                                Toast.makeText(Registro.this, "No se pudo guardar la contraseña", Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
                 }
             }
         });
